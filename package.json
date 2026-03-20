@@ -1,0 +1,39 @@
+{
+  "name": "depocat",
+  "version": "1.0.0",
+  "description": "DepoCat deposition tracking app",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "db:init": "sqlite3 prisma/dev.db < prisma/init.sql",
+    "seed:users": "node scripts/seed-users.mjs",
+    "setup": "npm run prisma:generate && npm run db:init && npm run seed:users"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
+    "jose": "^6.2.2",
+    "lucide-react": "^0.577.0",
+    "next": "^16.2.0",
+    "prisma": "^6.19.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}

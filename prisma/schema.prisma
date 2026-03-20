@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Matter {
+  id              String            @id @default(cuid())
+  referenceNumber String            @unique
+  clientName      String
+  notes           String?
+  status          MatterStatus      @default(ACTIVE)
+  createdById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  depositions     DepositionTarget[]
+  opposingCounsel OpposingCounsel[]
+  createdBy       User?             @relation("MattersCreated", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([clientName])
+  @@index([status])
+  @@index([createdById])
+}
+
+model DepositionTarget {
+  id              String           @id @default(cuid())
+  matterId        String
+  fullName        String
+  roleTitle       String?
+  requestedDate   DateTime?
+  scheduledDate   DateTime?
+  status          DepositionStatus @default(NEEDS_REQUEST)
+  followUpStage   FollowUpStage    @default(FIRST_EMAIL_PENDING)
+  followUpDueDate DateTime?
+  lastContactedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  matter          Matter           @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@index([status])
+  @@index([followUpStage])
+  @@index([followUpDueDate])
+}
+
+model OpposingCounsel {
+  id        String   @id @default(cuid())
+  matterId  String
+  fullName  String
+  email     String
+  firmName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  matter    Matter   @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@index([email])
+}
+
+model User {
+  id             String      @id @default(cuid())
+  email          String      @unique
+  fullName       String
+  passwordHash   String
+  role           UserRole    @default(PARALEGAL)
+  status         UserStatus  @default(ACTIVE)
+  lastLoginAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdMatters Matter[]    @relation("MattersCreated")
+  auditLogs      AuditLog[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, createdAt])
+}
+
+enum MatterStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum DepositionStatus {
+  NEEDS_REQUEST
+  REQUESTED
+  SCHEDULED
+  COMPLETED
+}
+
+enum FollowUpStage {
+  FIRST_EMAIL_PENDING
+  SECOND_EMAIL_PENDING
+  FINAL_NOTICE_PENDING
+  AWAITING_RESPONSE
+  SCHEDULED
+}
+
+enum UserRole {
+  OWNER
+  PARALEGAL
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
