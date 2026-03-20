@@ -43,15 +43,19 @@ export default async function HomePage() {
         },
       },
     }),
-    prisma.user.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: [{ role: "asc" }, { fullName: "asc" }],
-    }),
-    prisma.auditLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: { user: true },
-    }),
+    session.role === "OWNER"
+      ? prisma.user.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: [{ role: "asc" }, { fullName: "asc" }],
+        })
+      : Promise.resolve([]),
+    session.role === "OWNER"
+      ? prisma.auditLog.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          include: { user: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const stats = {
@@ -152,52 +156,56 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="content-grid">
-        <div className="panel stack">
-          <div>
-            <h2 className="section-title">Authorized team</h2>
-            <p className="muted">
-              These are the active online logins currently configured for DepoCat.
-            </p>
-          </div>
-          <div className="stack">
-            {users.map((user) => (
-              <div key={user.id} className="stat-card">
-                <div className="row">
-                  <strong>{user.fullName}</strong>
-                  <span className={`pill ${user.role === "OWNER" ? "pill-danger" : "pill-neutral"}`}>
-                    {user.role === "OWNER" ? "Owner" : "Paralegal"}
-                  </span>
+      {session.role === "OWNER" ? (
+        <section className="content-grid">
+          <div className="panel stack">
+            <div>
+              <h2 className="section-title">Authorized team</h2>
+              <p className="muted">
+                These are the active online logins currently configured for DepoCat.
+              </p>
+            </div>
+            <div className="stack">
+              {users.map((user) => (
+                <div key={user.id} className="stat-card">
+                  <div className="row">
+                    <strong>{user.fullName}</strong>
+                    <span className={`pill ${user.role === "OWNER" ? "pill-danger" : "pill-neutral"}`}>
+                      {user.role === "OWNER" ? "Owner" : "Paralegal"}
+                    </span>
+                  </div>
+                  <div className="muted small">{user.email}</div>
+                  <div className="muted small">
+                    Last login {user.lastLoginAt ? format(user.lastLoginAt, "MMM d, yyyy h:mm a") : "Not yet"}
+                  </div>
                 </div>
-                <div className="muted small">{user.email}</div>
-                <div className="muted small">
-                  Last login {user.lastLoginAt ? format(user.lastLoginAt, "MMM d, yyyy h:mm a") : "Not yet"}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="panel stack">
-          <div>
-            <h2 className="section-title">Recent security activity</h2>
-            <p className="muted">A lightweight audit trail for sign-ins, imports, and matter changes.</p>
-          </div>
-          <div className="stack">
-            {recentAudit.map((event) => (
-              <div key={event.id} className="stat-card">
-                <div className="row">
-                  <strong>{event.action}</strong>
-                  <span className="muted small">{format(event.createdAt, "MMM d, h:mm a")}</span>
+          <div className="panel stack">
+            <div>
+              <h2 className="section-title">Recent security activity</h2>
+              <p className="muted">
+                A lightweight audit trail for sign-ins, imports, and matter changes.
+              </p>
+            </div>
+            <div className="stack">
+              {recentAudit.map((event) => (
+                <div key={event.id} className="stat-card">
+                  <div className="row">
+                    <strong>{event.action}</strong>
+                    <span className="muted small">{format(event.createdAt, "MMM d, h:mm a")}</span>
+                  </div>
+                  <div className="muted small">
+                    {event.user?.fullName ?? "System"} · {event.entityType}
+                  </div>
                 </div>
-                <div className="muted small">
-                  {event.user?.fullName ?? "System"} · {event.entityType}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="table-shell">
         <div className="row">

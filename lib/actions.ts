@@ -7,7 +7,9 @@ import { z } from "zod";
 import { logAudit } from "@/lib/audit";
 import { authenticateUser, createSession, destroySession, requireSession } from "@/lib/auth";
 import { parseWorkbook, maybeDate } from "@/lib/import";
+import { isLoginBlocked, recordLoginAttempt } from "@/lib/login-security";
 import { prisma } from "@/lib/prisma";
+import { getRequestContext } from "@/lib/request-context";
 import { addDays } from "@/lib/utils";
 
 const loginSchema = z.object({
@@ -26,6 +28,7 @@ const matterSchema = z.object({
 });
 
 export async function loginAction(_: { error: string }, formData: FormData) {
+  const { ipAddress, userAgent } = await getRequestContext();
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -35,9 +38,25 @@ export async function loginAction(_: { error: string }, formData: FormData) {
     return { error: "Enter the admin email and a strong password." };
   }
 
+  if (await isLoginBlocked(parsed.data.email, ipAddress)) {
+    return {
+      error: "Too many login attempts. Please wait 15 minutes before trying again.",
+    };
+  }
+
   const user = await authenticateUser(parsed.data.email, parsed.data.password);
 
   if (!user) {
+    await recordLoginAttempt({
+      email: parsed.data.email,
+      ipAddress,
+      successful: false,
+    });
+    await logAudit({
+      action: "LOGIN_FAILED",
+      entityType: "User",
+      metadata: { email: parsed.data.email.toLowerCase(), ipAddress: ipAddress ?? "unknown" },
+    });
     return { error: "That email/password combination did not match an active DepoCat user." };
   }
 
@@ -51,13 +70,21 @@ export async function loginAction(_: { error: string }, formData: FormData) {
     email: user.email,
     fullName: user.fullName,
     role: user.role,
+    ipAddress,
+    userAgent,
+  });
+  await recordLoginAttempt({
+    email: user.email,
+    ipAddress,
+    successful: true,
+    userId: user.id,
   });
   await logAudit({
     userId: user.id,
     action: "LOGIN",
     entityType: "User",
     entityId: user.id,
-    metadata: { email: user.email, role: user.role },
+    metadata: { email: user.email, role: user.role, ipAddress: ipAddress ?? "unknown" },
   });
   redirect("/");
 }

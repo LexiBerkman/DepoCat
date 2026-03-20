@@ -72,6 +72,8 @@ model User {
   updatedAt      DateTime    @updatedAt
   createdMatters Matter[]    @relation("MattersCreated")
   auditLogs      AuditLog[]
+  sessions       Session[]
+  loginAttempts  LoginAttempt[]
 
   @@index([role])
   @@index([status])
@@ -89,6 +91,36 @@ model AuditLog {
 
   @@index([userId])
   @@index([entityType, createdAt])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  tokenId    String    @unique
+  userId     String
+  ipAddress  String?
+  userAgent  String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  email      String
+  ipAddress  String?
+  successful Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+  @@index([successful, createdAt])
 }
 
 enum MatterStatus {

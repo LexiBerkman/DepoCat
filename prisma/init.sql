@@ -62,6 +62,29 @@ CREATE TABLE IF NOT EXISTS AuditLog (
   FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS Session (
+  id TEXT PRIMARY KEY NOT NULL,
+  tokenId TEXT NOT NULL UNIQUE,
+  userId TEXT NOT NULL,
+  ipAddress TEXT,
+  userAgent TEXT,
+  expiresAt DATETIME NOT NULL,
+  revokedAt DATETIME,
+  lastSeenAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS LoginAttempt (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL,
+  ipAddress TEXT,
+  successful INTEGER NOT NULL DEFAULT 0,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  userId TEXT,
+  FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL
+);
+
 CREATE INDEX IF NOT EXISTS Matter_clientName_idx ON Matter(clientName);
 CREATE INDEX IF NOT EXISTS Matter_status_idx ON Matter(status);
 CREATE INDEX IF NOT EXISTS Matter_createdById_idx ON Matter(createdById);
@@ -75,3 +98,8 @@ CREATE INDEX IF NOT EXISTS User_role_idx ON User(role);
 CREATE INDEX IF NOT EXISTS User_status_idx ON User(status);
 CREATE INDEX IF NOT EXISTS AuditLog_userId_idx ON AuditLog(userId);
 CREATE INDEX IF NOT EXISTS AuditLog_entityType_createdAt_idx ON AuditLog(entityType, createdAt);
+CREATE INDEX IF NOT EXISTS Session_userId_idx ON Session(userId);
+CREATE INDEX IF NOT EXISTS Session_expiresAt_idx ON Session(expiresAt);
+CREATE INDEX IF NOT EXISTS LoginAttempt_email_createdAt_idx ON LoginAttempt(email, createdAt);
+CREATE INDEX IF NOT EXISTS LoginAttempt_ipAddress_createdAt_idx ON LoginAttempt(ipAddress, createdAt);
+CREATE INDEX IF NOT EXISTS LoginAttempt_successful_createdAt_idx ON LoginAttempt(successful, createdAt);
