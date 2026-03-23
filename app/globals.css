@@ -349,11 +349,17 @@ th:nth-child(5) {
 }
 
 .next-step-cell {
-  text-align: center;
+  text-align: left;
 }
 
-.next-step-cell .pill,
-.next-step-cell .link-chip {
+.next-step-summary {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.next-step-summary .pill {
   margin-inline: auto;
 }
 

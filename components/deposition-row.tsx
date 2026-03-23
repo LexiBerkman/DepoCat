@@ -127,8 +127,10 @@ export function DepositionRow({
         />
       </td>
       <td className="next-step-cell">
-        <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-        <div className="muted small">Due {formatDate(currentFollowUpDueDate)}</div>
+        <div className="next-step-summary">
+          <div className={`pill ${followUp.className}`}>{followUp.label}</div>
+          <div className="muted small">Due {formatDate(currentFollowUpDueDate)}</div>
+        </div>
         <LogEmailForm
           depositionTargetId={depositionTargetId}
           defaultType={
