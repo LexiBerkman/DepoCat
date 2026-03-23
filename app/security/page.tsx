@@ -1,11 +1,12 @@
 import { format } from "date-fns";
-import { Cat, PawPrint } from "lucide-react";
+import { Cat, PawPrint, ShieldCheck } from "lucide-react";
 
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { OwnerResetPasswordForm } from "@/components/owner-reset-password-form";
 import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { securityChecklist } from "@/lib/security";
 
 export default async function SecurityPage() {
   const session = await requireSession();
@@ -93,6 +94,25 @@ export default async function SecurityPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="panel stack">
+        <div>
+          <h2 className="section-title">Security features</h2>
+          <p className="muted">
+            The live app protections and deployment safeguards stay documented here, not on the tracker.
+          </p>
+        </div>
+        <div className="security-grid">
+          {securityChecklist.map((item) => (
+            <div key={item} className="stat-card">
+              <div className="row">
+                <ShieldCheck size={18} />
+                <span className="small">{item}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

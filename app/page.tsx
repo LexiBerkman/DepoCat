@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CalendarClock, Cat, PawPrint, ShieldCheck } from "lucide-react";
+import { CalendarClock, Cat, PawPrint } from "lucide-react";
 
 import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
@@ -10,7 +10,6 @@ import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
 import { type EmailTemplateKey } from "@/lib/email-templates";
 import { prisma } from "@/lib/prisma";
-import { securityChecklist } from "@/lib/security";
 
 function formatDate(value: Date | null) {
   return value ? format(value, "MMM d, yyyy") : "Not set";
@@ -114,16 +113,6 @@ export default async function HomePage() {
             <div className="mini-callout">
               <Cat size={16} />
               No missed follow-ups. No feral spreadsheets.
-            </div>
-            <div className="security-grid">
-              {securityChecklist.map((item) => (
-                <div key={item} className="stat-card">
-                  <div className="row">
-                    <ShieldCheck size={18} />
-                    <span className="small">{item}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
