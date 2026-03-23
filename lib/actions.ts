@@ -24,8 +24,6 @@ const loginSchema = z.object({
 const matterSchema = z.object({
   referenceNumber: z.string().min(1),
   clientName: z.string().min(1),
-  counselName: z.string().min(1),
-  counselEmail: z.string().email(),
   notes: z.string().optional(),
 });
 
@@ -439,8 +437,6 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
   const parsed = matterSchema.safeParse({
     referenceNumber: formData.get("referenceNumber"),
     clientName: formData.get("clientName"),
-    counselName: formData.get("counselName"),
-    counselEmail: formData.get("counselEmail"),
     notes: formData.get("notes") || undefined,
   });
 
@@ -460,16 +456,42 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
     return { error: "Add at least one deponent before saving the matter." };
   }
 
+  const counselNames = formData
+    .getAll("counselName")
+    .map((value) => String(value).trim());
+  const counselEmails = formData
+    .getAll("counselEmail")
+    .map((value) => String(value).trim());
+
+  const counselEntries = counselEmails
+    .map((email, index) => ({
+      fullName: counselNames[index] || "",
+      email,
+    }))
+    .filter((entry) => entry.fullName || entry.email);
+
+  if (counselEntries.length === 0) {
+    return { error: "Add at least one opposing counsel name and email before saving the matter." };
+  }
+
+  for (const entry of counselEntries) {
+    if (!entry.fullName || !entry.email) {
+      return { error: "Each opposing counsel entry needs both a name and an email address." };
+    }
+
+    const emailCheck = z.string().email().safeParse(entry.email);
+    if (!emailCheck.success) {
+      return { error: `The counsel email "${entry.email}" is not a valid email address.` };
+    }
+  }
+
   await prisma.matter.upsert({
     where: { referenceNumber: parsed.data.referenceNumber },
     update: {
       clientName: parsed.data.clientName,
       notes: parsed.data.notes,
       opposingCounsel: {
-        create: {
-          fullName: parsed.data.counselName,
-          email: parsed.data.counselEmail,
-        },
+        create: counselEntries,
       },
       depositions: {
         create: deponentNames.map((deponentName, index) => ({
@@ -486,10 +508,7 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
       notes: parsed.data.notes,
       createdById: session.userId,
       opposingCounsel: {
-        create: {
-          fullName: parsed.data.counselName,
-          email: parsed.data.counselEmail,
-        },
+        create: counselEntries,
       },
       depositions: {
         create: deponentNames.map((deponentName, index) => ({

@@ -13,8 +13,13 @@ function createDeponentField() {
   return { id: crypto.randomUUID() };
 }
 
+function createCounselField() {
+  return { id: crypto.randomUUID() };
+}
+
 export function MatterForm() {
   const [state, formAction, pending] = useActionState(createMatterAction, initialState);
+  const [counselEntries, setCounselEntries] = useState([createCounselField()]);
   const [deponents, setDeponents] = useState([createDeponentField()]);
 
   return (
@@ -28,14 +33,59 @@ export function MatterForm() {
           Client name
           <input className="field" name="clientName" placeholder="Jane Smith" required />
         </label>
-        <label className="label">
-          Opposing counsel
-          <input className="field" name="counselName" placeholder="Alex Morgan" required />
-        </label>
-        <label className="label">
-          Counsel email
-          <input className="field" name="counselEmail" type="email" placeholder="alex@firm.com" required />
-        </label>
+      </div>
+      <div className="stack">
+        <div className="row">
+          <div>
+            <h3 className="section-title intake-subtitle">Opposing counsel</h3>
+            <p className="muted small">Add every defense attorney contact for this matter.</p>
+          </div>
+          <button
+            className="button-secondary small-button"
+            type="button"
+            onClick={() => setCounselEntries((current) => [...current, createCounselField()])}
+          >
+            <Plus size={14} />
+            Add another counsel
+          </button>
+        </div>
+        <div className="stack">
+          {counselEntries.map((counsel, index) => (
+            <div key={counsel.id} className="deponent-card">
+              <div className="row">
+                <strong>Opposing counsel {index + 1}</strong>
+                {counselEntries.length > 1 ? (
+                  <button
+                    className="button-secondary small-button"
+                    type="button"
+                    onClick={() =>
+                      setCounselEntries((current) => current.filter((entry) => entry.id !== counsel.id))
+                    }
+                  >
+                    <Trash2 size={14} />
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <div className="form-grid">
+                <label className="label">
+                  Attorney name
+                  <input className="field" name="counselName" placeholder="Alex Morgan" required />
+                </label>
+                <label className="label">
+                  Attorney email
+                  <input
+                    className="field"
+                    name="counselEmail"
+                    type="email"
+                    placeholder="alex@firm.com"
+                    required
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="stack">
         <div className="row">
