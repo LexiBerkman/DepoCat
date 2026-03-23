@@ -126,7 +126,7 @@ export function DepositionRow({
           }}
         />
       </td>
-      <td>
+      <td className="next-step-cell">
         <div className={`pill ${followUp.className}`}>{followUp.label}</div>
         <div className="muted small">Due {formatDate(currentFollowUpDueDate)}</div>
         <LogEmailForm

@@ -328,6 +328,10 @@ th {
   z-index: 4;
 }
 
+th:nth-child(5) {
+  text-align: center;
+}
+
 .col-reference { width: 10%; }
 .col-client { width: 14%; }
 .col-deponent { width: 15%; }
@@ -342,6 +346,15 @@ th {
   padding: 0.22rem 0.65rem;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.next-step-cell {
+  text-align: center;
+}
+
+.next-step-cell .pill,
+.next-step-cell .link-chip {
+  margin-inline: auto;
 }
 
 .pill-warning { background: #fff0ca; color: #835300; }
