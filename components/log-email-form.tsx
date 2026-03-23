@@ -44,7 +44,7 @@ export function LogEmailForm({
   }, [onLogged, state.communicationType, state.followUpDueDateValue, state.followUpStage, state.sentAt, state.success]);
 
   return (
-    <form action={formAction} className="row-wrap">
+    <form action={formAction} className="row-wrap next-step-actions">
       <input type="hidden" name="depositionTargetId" value={depositionTargetId} />
       <button className="button-secondary small-button" type="submit" name="communicationType" value="FIRST_REQUEST" disabled={pending}>
         {pending && defaultType === "FIRST_REQUEST" ? "Logging..." : "Log 1st"}

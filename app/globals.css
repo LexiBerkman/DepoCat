@@ -363,6 +363,16 @@ th:nth-child(5) {
   margin-inline: auto;
 }
 
+.next-step-actions {
+  justify-content: center;
+}
+
+.next-step-actions .error,
+.next-step-actions .success {
+  width: 100%;
+  text-align: center;
+}
+
 .pill-warning { background: #fff0ca; color: #835300; }
 .pill-success { background: #dff7e6; color: #1f6a46; }
 .pill-danger { background: #f9dada; color: #8c2d2d; }
