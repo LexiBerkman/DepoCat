@@ -10,7 +10,6 @@ import { DeleteDeponentButton } from "@/components/delete-deponent-button";
 import { LogEmailForm } from "@/components/log-email-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import {
-  formatOptionalDate,
   getDefaultCommunicationType,
   getDraftTemplate,
   getFollowUpLabel,
@@ -93,7 +92,6 @@ export function DepositionRow({
       <td className="next-step-cell">
         <div className="next-step-summary">
           <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-          <div className="muted small">Due {formatOptionalDate(currentFollowUpDueDate)}</div>
         </div>
         <LogEmailForm
           depositionTargetId={depositionTargetId}
