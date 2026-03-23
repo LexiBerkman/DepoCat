@@ -1,13 +1,16 @@
 "use client";
 
 import { format } from "date-fns";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { updateScheduledDateAction } from "@/lib/actions";
 
 const initialState = {
   error: "",
   success: "",
+  scheduledDateValue: "",
+  followUpStage: "",
+  followUpDueDateValue: "",
 };
 
 function toInputValue(date: Date | null) {
@@ -21,14 +24,33 @@ function toInputValue(date: Date | null) {
 export function ScheduledDateForm({
   depositionTargetId,
   scheduledDate,
+  onUpdated,
 }: {
   depositionTargetId: string;
   scheduledDate: Date | null;
+  onUpdated?: (payload: {
+    scheduledDateValue: string;
+    followUpStage: string;
+    followUpDueDateValue: string;
+  }) => void;
 }) {
   const [state, formAction, pending] = useActionState(updateScheduledDateAction, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!state.success || !onUpdated) {
+      return;
+    }
+
+    onUpdated({
+      scheduledDateValue: state.scheduledDateValue,
+      followUpStage: state.followUpStage,
+      followUpDueDateValue: state.followUpDueDateValue,
+    });
+  }, [onUpdated, state.followUpDueDateValue, state.followUpStage, state.scheduledDateValue, state.success]);
 
   return (
-    <form action={formAction} className="stack scheduled-form">
+    <form ref={formRef} action={formAction} className="stack scheduled-form">
       <input type="hidden" name="depositionTargetId" value={depositionTargetId} />
       <input
         className="field"

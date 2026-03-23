@@ -502,7 +502,13 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
 }
 
 export async function updateScheduledDateAction(
-  _: { error: string; success: string },
+  _: {
+    error: string;
+    success: string;
+    scheduledDateValue: string;
+    followUpStage: string;
+    followUpDueDateValue: string;
+  },
   formData: FormData,
 ) {
   const session = await requireSession();
@@ -512,7 +518,13 @@ export async function updateScheduledDateAction(
   });
 
   if (!parsed.success) {
-    return { error: "Enter a valid scheduled date.", success: "" };
+    return {
+      error: "Enter a valid scheduled date.",
+      success: "",
+      scheduledDateValue: "",
+      followUpStage: "",
+      followUpDueDateValue: "",
+    };
   }
 
   const deposition = await prisma.depositionTarget.findUnique({
@@ -526,13 +538,25 @@ export async function updateScheduledDateAction(
   });
 
   if (!deposition) {
-    return { error: "That deponent record could not be found.", success: "" };
+    return {
+      error: "That deponent record could not be found.",
+      success: "",
+      scheduledDateValue: "",
+      followUpStage: "",
+      followUpDueDateValue: "",
+    };
   }
 
   const scheduledDate = parseScheduledDateInput(parsed.data.scheduledDate ?? "");
 
   if ((parsed.data.scheduledDate ?? "").trim() && !scheduledDate) {
-    return { error: "Enter a valid scheduled date.", success: "" };
+    return {
+      error: "Enter a valid scheduled date.",
+      success: "",
+      scheduledDateValue: "",
+      followUpStage: "",
+      followUpDueDateValue: "",
+    };
   }
 
   const lastCommunication = deposition.communications[0];
@@ -565,10 +589,15 @@ export async function updateScheduledDateAction(
     },
   });
 
-  revalidatePath("/");
   return {
     error: "",
     success: scheduledDate ? "Scheduled date saved." : "Scheduled date cleared.",
+    scheduledDateValue: scheduledDate ? parsed.data.scheduledDate?.trim() ?? "" : "",
+    followUpStage: scheduledDate ? "SCHEDULED" : followUpState.followUpStage,
+    followUpDueDateValue:
+      scheduledDate || !followUpState.followUpDueDate
+        ? ""
+        : followUpState.followUpDueDate.toISOString(),
   };
 }
 

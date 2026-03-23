@@ -1,59 +1,12 @@
 import { format } from "date-fns";
-import type { CommunicationType } from "@prisma/client";
 import { CalendarClock, Cat, PawPrint } from "lucide-react";
 
-import { CounselActions } from "@/components/counsel-actions";
+import { DepositionRow } from "@/components/deposition-row";
 import { ImportForm } from "@/components/import-form";
-import { LogEmailForm } from "@/components/log-email-form";
 import { MatterForm } from "@/components/matter-form";
-import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
-import { type EmailTemplateKey } from "@/lib/email-templates";
 import { prisma } from "@/lib/prisma";
-
-function formatDate(value: Date | null) {
-  return value ? format(value, "MMM d, yyyy") : "Not set";
-}
-
-function getFollowUpLabel(stage: string) {
-  switch (stage) {
-    case "FIRST_EMAIL_PENDING":
-      return { label: "1st email", className: "pill-neutral" };
-    case "SECOND_EMAIL_PENDING":
-      return { label: "2nd email due", className: "pill-warning" };
-    case "FINAL_NOTICE_PENDING":
-      return { label: "Final email due", className: "pill-danger" };
-    case "SCHEDULED":
-      return { label: "Scheduled", className: "pill-success" };
-    default:
-      return { label: "Awaiting reply", className: "pill-neutral" };
-  }
-}
-
-function getDraftEmailTemplate(stage: string, lastCommunicationType?: CommunicationType): EmailTemplateKey {
-  if (!lastCommunicationType) {
-    if (stage === "SECOND_EMAIL_PENDING") {
-      return "SECOND";
-    }
-
-    if (stage === "FINAL_NOTICE_PENDING") {
-      return "FINAL";
-    }
-
-    return "FIRST";
-  }
-
-  if (lastCommunicationType === "FIRST_REQUEST") {
-    return "SECOND";
-  }
-
-  if (lastCommunicationType === "SECOND_REQUEST" || lastCommunicationType === "FINAL_NOTICE") {
-    return "FINAL";
-  }
-
-  return "FIRST";
-}
 
 export default async function HomePage() {
   const session = await requireSession();
@@ -194,77 +147,32 @@ export default async function HomePage() {
           <tbody>
             {matters.flatMap((matter) =>
               matter.depositions.map((deposition) => {
-                const counselEmails = matter.opposingCounsel.map((counsel) => counsel.email);
-                const followUp = getFollowUpLabel(deposition.followUpStage);
                 const lastCommunication = deposition.communications[0];
-                const lastSentDateLabel = lastCommunication
-                  ? format(lastCommunication.sentAt, "MMMM d, yyyy")
-                  : null;
 
                 return (
-                  <tr key={deposition.id}>
-                    <td>
-                      <strong>{matter.referenceNumber}</strong>
-                    </td>
-                    <td>{matter.clientName}</td>
-                    <td>
-                      <div>{deposition.fullName}</div>
-                      <div className="muted small">{deposition.roleTitle || "No role noted"}</div>
-                    </td>
-                    <td>
-                      <ScheduledDateForm
-                        depositionTargetId={deposition.id}
-                        scheduledDate={deposition.scheduledDate}
-                      />
-                    </td>
-                    <td>
-                      <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-                      <div className="muted small">Due {formatDate(deposition.followUpDueDate)}</div>
-                      <LogEmailForm
-                        depositionTargetId={deposition.id}
-                        defaultType={
-                          deposition.followUpStage === "SECOND_EMAIL_PENDING"
-                            ? "FIRST_REQUEST"
-                            : deposition.followUpStage === "FINAL_NOTICE_PENDING"
-                              ? "SECOND_REQUEST"
-                              : "FINAL_NOTICE"
-                        }
-                      />
-                    </td>
-                    <td>
-                      <div className="small">
-                        {lastCommunication ? format(lastCommunication.sentAt, "MMM d, yyyy h:mm a") : "Not logged"}
-                      </div>
-                      <div className="muted small">
-                        {lastCommunication
-                          ? lastCommunication.communicationType === "FIRST_REQUEST"
-                            ? "1st email"
-                            : lastCommunication.communicationType === "SECOND_REQUEST"
-                              ? "2nd email"
-                              : "Final email"
-                          : "No communication logged"}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="stack">
-                        <CounselActions
-                          emails={counselEmails}
-                          deponentName={deposition.fullName}
-                          referenceNumber={matter.referenceNumber}
-                          draftTemplate={getDraftEmailTemplate(
-                            deposition.followUpStage,
-                            lastCommunication?.communicationType,
-                          )}
-                          lastSentDateLabel={lastSentDateLabel}
-                        />
-                        <div className="small muted">
-                          {matter.opposingCounsel
-                            .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
-                            .join(" | ")}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
+                  <DepositionRow
+                    key={deposition.id}
+                    referenceNumber={matter.referenceNumber}
+                    clientName={matter.clientName}
+                    depositionTargetId={deposition.id}
+                    deponentName={deposition.fullName}
+                    roleTitle={deposition.roleTitle}
+                    scheduledDate={deposition.scheduledDate}
+                    followUpStage={deposition.followUpStage}
+                    followUpDueDate={deposition.followUpDueDate}
+                    lastCommunication={
+                      lastCommunication
+                        ? {
+                            sentAt: lastCommunication.sentAt,
+                            communicationType: lastCommunication.communicationType,
+                          }
+                        : undefined
+                    }
+                    counselEmails={matter.opposingCounsel.map((counsel) => counsel.email)}
+                    counselSummary={matter.opposingCounsel
+                      .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
+                      .join(" | ")}
+                  />
                 );
               }),
             )}
