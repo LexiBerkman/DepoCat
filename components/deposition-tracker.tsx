@@ -1,3 +1,4 @@
+import { Cat, PawPrint } from "lucide-react";
 import type { CommunicationType } from "@prisma/client";
 
 import { DepositionRow } from "@/components/deposition-row";
@@ -32,6 +33,11 @@ export function DepositionTracker({ matters }: { matters: TrackerMatter[] }) {
         <div>
           <h2 className="section-title">Deposition tracker</h2>
           <p className="muted">Every matter, deponent, deadline, and contact path in one place.</p>
+        </div>
+        <div className="tracker-tag">
+          <Cat size={15} />
+          <PawPrint size={14} />
+          Herd the cats
         </div>
       </div>
       <div className="table-scroll">

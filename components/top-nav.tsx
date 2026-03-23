@@ -15,6 +15,10 @@ export function TopNav({
   return (
     <div className="top-nav">
       <div className="row-wrap">
+        <span className="brand-chip">
+          <Cat size={16} />
+          DepoCat
+        </span>
         <Link className={currentPath === "/" ? "nav-chip nav-chip-active" : "nav-chip"} href="/">
           <Cat size={16} />
           Tracker

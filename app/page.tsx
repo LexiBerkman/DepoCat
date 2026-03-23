@@ -67,6 +67,17 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="panel stack">
+            <div className="cat-gallery" aria-hidden="true">
+              <div className="cat-gallery-card cat-gallery-card-tall">
+                <Cat size={34} />
+              </div>
+              <div className="cat-gallery-card">
+                <Cat size={26} />
+              </div>
+              <div className="cat-gallery-card cat-gallery-card-paw">
+                <PawPrint size={24} />
+              </div>
+            </div>
             <div className="row">
               <strong>Workflow pulse</strong>
               <CalendarClock size={18} />

@@ -37,6 +37,17 @@ export default async function SecurityPage() {
             <Cat size={16} />
             Security controls and account management
           </span>
+          <div className="security-cat-row" aria-hidden="true">
+            <span className="security-cat-chip">
+              <Cat size={16} />
+            </span>
+            <span className="security-cat-chip">
+              <PawPrint size={14} />
+            </span>
+            <span className="security-cat-chip">
+              <Cat size={14} />
+            </span>
+          </div>
           <h1 className="hero-title">Security</h1>
           <p className="hero-subtitle">
             Keep passwords current, manage user access, and review recent activity without cluttering
