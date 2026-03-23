@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
 import { authenticateUser, createSession, destroySession, requireOwner, requireSession } from "@/lib/auth";
-import { ImportError, parseWorkbook, maybeDate } from "@/lib/import";
+import { ImportError, parseWorkbook, maybeDate, splitMultiValue } from "@/lib/import";
 import { isLoginBlocked, recordLoginAttempt } from "@/lib/login-security";
 import { prisma } from "@/lib/prisma";
 import { getRequestContext } from "@/lib/request-context";
@@ -380,22 +380,28 @@ export async function importWorkbookAction(
         },
       });
 
-      const counsel = await prisma.opposingCounsel.findFirst({
-        where: {
-          matterId: matter.id,
-          email: row.counselEmail,
-        },
-      });
+      const counselNames = splitMultiValue(row.counselName);
+      const counselEmails = splitMultiValue(row.counselEmail);
+      const counselFirms = splitMultiValue(row.counselFirm);
 
-      if (!counsel) {
-        await prisma.opposingCounsel.create({
-          data: {
+      for (const [index, email] of counselEmails.entries()) {
+        const counsel = await prisma.opposingCounsel.findFirst({
+          where: {
             matterId: matter.id,
-            fullName: row.counselName,
-            email: row.counselEmail,
-            firmName: row.counselFirm,
+            email,
           },
         });
+
+        if (!counsel) {
+          await prisma.opposingCounsel.create({
+            data: {
+              matterId: matter.id,
+              fullName: counselNames[index] || counselNames[0] || "Opposing Counsel",
+              email,
+              firmName: counselFirms[index] || counselFirms[0] || undefined,
+            },
+          });
+        }
       }
 
       const existingTarget = await prisma.depositionTarget.findFirst({

@@ -24,11 +24,13 @@
     "dotenv": "^17.3.1",
     "exceljs": "^4.4.0",
     "jose": "^6.2.2",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.577.0",
     "next": "^16.2.0",
     "prisma": "^6.19.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "read-excel-file": "^7.0.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

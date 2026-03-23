@@ -1,8 +1,6 @@
 import "server-only";
 
-import { Readable } from "stream";
-
-import ExcelJS from "exceljs";
+import JSZip from "jszip";
 import { ZodError, z } from "zod";
 
 const rowSchema = z.object({
@@ -12,8 +10,8 @@ const rowSchema = z.object({
   deponentRole: z.string().optional(),
   requestedDate: z.string().optional(),
   scheduledDate: z.string().optional(),
-  counselName: z.string().min(1),
-  counselEmail: z.string().email(),
+  counselName: z.string().optional(),
+  counselEmail: z.string().optional(),
   counselFirm: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -27,7 +25,7 @@ const headerAliases = {
     "referenceno",
     "refnumber",
     "refno",
-    "ref#",
+    "ref",
     "filenumber",
     "caseid",
   ],
@@ -42,6 +40,12 @@ const headerAliases = {
   notes: ["notes", "comments", "memo", "description"],
 } satisfies Record<keyof ImportRow, string[]>;
 
+const REQUIRED_FIELDS: Array<keyof ImportRow> = [
+  "referenceNumber",
+  "clientName",
+  "deponentName",
+];
+
 export class ImportError extends Error {}
 
 function normalizeHeader(value: string) {
@@ -52,61 +56,129 @@ function normalizeHeader(value: string) {
     .replace(/\s+/g, "");
 }
 
-function valueForAlias(record: Record<string, string>, field: keyof ImportRow) {
-  for (const alias of headerAliases[field]) {
-    if (record[alias]) {
-      return record[alias];
-    }
+function decodeXml(value: string) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function columnLetters(cellRef: string) {
+  const match = cellRef.match(/^[A-Z]+/i);
+  return match ? match[0].toUpperCase() : "";
+}
+
+function excelSerialToIsoDate(serialText: string) {
+  const serial = Number(serialText);
+  if (!Number.isFinite(serial)) {
+    return serialText;
   }
 
-  return undefined;
+  const utcDays = Math.floor(serial - 25569);
+  const utcValue = utcDays * 86400;
+  const dateInfo = new Date(utcValue * 1000);
+
+  if (Number.isNaN(dateInfo.getTime())) {
+    return serialText;
+  }
+
+  return dateInfo.toISOString().slice(0, 10);
+}
+
+function extractCellValue(cellXml: string) {
+  const typeMatch = cellXml.match(/\bt="([^"]+)"/);
+  const type = typeMatch?.[1];
+
+  if (type === "inlineStr") {
+    const textMatches = [...cellXml.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)];
+    return decodeXml(textMatches.map((match) => match[1]).join("")).trim();
+  }
+
+  const valueMatch = cellXml.match(/<v>([\s\S]*?)<\/v>/);
+  return decodeXml(valueMatch?.[1] ?? "").trim();
 }
 
 function isBlankRow(record: Record<string, string>) {
   return Object.values(record).every((value) => value.trim() === "");
 }
 
-function stringifyCell(value: unknown) {
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+function valueForAlias(record: Record<string, string>, field: keyof ImportRow) {
+  for (const alias of headerAliases[field]) {
+    const value = record[alias];
+    if (value && value.trim() !== "") {
+      return value;
+    }
   }
 
-  return String(value ?? "").trim();
+  return undefined;
 }
 
-async function loadWorksheet(buffer: Buffer, filename?: string) {
-  const workbook = new ExcelJS.Workbook();
+async function parseXlsx(buffer: Buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const worksheetXml = await zip.file("xl/worksheets/sheet1.xml")?.async("string");
 
-  if (filename?.toLowerCase().endsWith(".csv")) {
-    await workbook.csv.read(Readable.from(buffer));
-  } else if (filename?.toLowerCase().endsWith(".xls")) {
-    throw new ImportError("Older .xls files are not supported yet. Please resave the workbook as .xlsx or .csv.");
-  } else {
-    await workbook.xlsx.load(buffer as never);
+  if (!worksheetXml) {
+    throw new ImportError("The uploaded workbook did not contain a readable first worksheet.");
   }
 
-  const sheet = workbook.worksheets[0];
+  const rowMatches = [...worksheetXml.matchAll(/<row\b[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)];
 
-  if (!sheet) {
-    throw new ImportError("The uploaded workbook did not contain a readable worksheet.");
-  }
+  return rowMatches.map(([, rowNumberText, rowXml]) => {
+    const rowNumber = Number(rowNumberText);
+    const cellMatches = [...rowXml.matchAll(/<c\b([^>]*)r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>|<c\b([^>]*)r="([A-Z]+\d+)"([^>]*)\/>/g)];
+    const values: Record<string, string> = {};
 
-  return sheet;
+    for (const match of cellMatches) {
+      const cellRef = match[2] || match[6];
+      const cellInner = match[4] ?? "";
+      const cellXml = `<c r="${cellRef}">${cellInner}</c>`;
+      values[columnLetters(cellRef)] = extractCellValue(cellXml);
+    }
+
+    return { rowNumber, values };
+  });
+}
+
+function parseCsv(buffer: Buffer) {
+  const rows = buffer
+    .toString("utf8")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0)
+    .map((line, index) => ({
+      rowNumber: index + 1,
+      values: Object.fromEntries(
+        line.split(",").map((value, cellIndex) => [String.fromCharCode(65 + cellIndex), value.trim()]),
+      ),
+    }));
+
+  return rows;
 }
 
 export async function parseWorkbook(buffer: Buffer, filename?: string): Promise<ImportRow[]> {
-  const sheet = await loadWorksheet(buffer, filename);
-  const headerRow = sheet.getRow(1);
-  const headerValues = Array.isArray(headerRow.values) ? headerRow.values.slice(1) : [];
-  const headers = headerValues.map((value) => normalizeHeader(String(value ?? "")));
+  const isCsv = filename?.toLowerCase().endsWith(".csv");
+  const isXls = filename?.toLowerCase().endsWith(".xls");
 
-  const missingRequiredColumns = [
-    "referenceNumber",
-    "clientName",
-    "deponentName",
-    "counselName",
-    "counselEmail",
-  ].filter((field) => !valueForAlias(Object.fromEntries(headers.map((header) => [header, header])), field as keyof ImportRow));
+  if (isXls) {
+    throw new ImportError("Older .xls files are not supported yet. Please resave the workbook as .xlsx or .csv.");
+  }
+
+  const parsedRows = isCsv ? parseCsv(buffer) : await parseXlsx(buffer);
+  const headerSource = parsedRows[0];
+
+  if (!headerSource) {
+    throw new ImportError("The workbook appears to be empty.");
+  }
+
+  const letterToHeader = Object.fromEntries(
+    Object.entries(headerSource.values).map(([letter, value]) => [letter, normalizeHeader(value)]),
+  );
+
+  const missingRequiredColumns = REQUIRED_FIELDS.filter(
+    (field) => !headerAliases[field].some((alias) => Object.values(letterToHeader).includes(alias)),
+  );
 
   if (missingRequiredColumns.length > 0) {
     throw new ImportError(
@@ -116,24 +188,24 @@ export async function parseWorkbook(buffer: Buffer, filename?: string): Promise<
 
   const rows: ImportRow[] = [];
 
-  sheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) {
-      return;
-    }
-
+  for (const parsedRow of parsedRows.slice(1)) {
     const normalized: Record<string, string> = {};
 
-    const rowValues = Array.isArray(row.values) ? row.values.slice(1) : [];
-
-    rowValues.forEach((value, index) => {
-      const header = headers[index];
-      if (header) {
-        normalized[header] = stringifyCell(value);
+    for (const [letter, value] of Object.entries(parsedRow.values)) {
+      const header = letterToHeader[letter];
+      if (!header) {
+        continue;
       }
-    });
+
+      const maybeDateField = Object.entries(headerAliases).find(([, aliases]) => aliases.includes(header))?.[0];
+      normalized[header] =
+        maybeDateField === "requestedDate" || maybeDateField === "scheduledDate"
+          ? excelSerialToIsoDate(value)
+          : value.trim();
+    }
 
     if (isBlankRow(normalized)) {
-      return;
+      continue;
     }
 
     try {
@@ -145,8 +217,8 @@ export async function parseWorkbook(buffer: Buffer, filename?: string): Promise<
           deponentRole: valueForAlias(normalized, "deponentRole") || undefined,
           requestedDate: valueForAlias(normalized, "requestedDate") || undefined,
           scheduledDate: valueForAlias(normalized, "scheduledDate") || undefined,
-          counselName: valueForAlias(normalized, "counselName"),
-          counselEmail: valueForAlias(normalized, "counselEmail"),
+          counselName: valueForAlias(normalized, "counselName") || undefined,
+          counselEmail: valueForAlias(normalized, "counselEmail") || undefined,
           counselFirm: valueForAlias(normalized, "counselFirm") || undefined,
           notes: valueForAlias(normalized, "notes") || undefined,
         }),
@@ -154,12 +226,12 @@ export async function parseWorkbook(buffer: Buffer, filename?: string): Promise<
     } catch (error) {
       if (error instanceof ZodError) {
         const field = error.issues[0]?.path.join(".") || "row";
-        throw new ImportError(`Row ${rowNumber} is invalid near "${field}". Please check that row's required fields and email address.`);
+        throw new ImportError(`Row ${parsedRow.rowNumber} is invalid near "${field}". Please check that row.`);
       }
 
       throw error;
     }
-  });
+  }
 
   if (rows.length === 0) {
     throw new ImportError("The workbook did not contain any importable rows beneath the header row.");
@@ -175,4 +247,15 @@ export function maybeDate(value?: string) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+export function splitMultiValue(value?: string) {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean);
 }
