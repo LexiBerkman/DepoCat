@@ -59,9 +59,11 @@ export function CounselEmailEditor({
           className="field counsel-assist-field"
           name="counselEmails"
           rows={3}
+          placeholder="alex@firm.com; jordan@firm.com"
           defaultValue={counselEmails.join("; ")}
         />
       </label>
+      <span className="muted small">Separate addresses with semicolons, commas, or line breaks.</span>
       <div className="row-wrap">
         <button className="button-secondary small-button" type="submit" disabled={pending}>
           <Save size={14} />

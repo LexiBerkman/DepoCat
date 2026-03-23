@@ -61,6 +61,13 @@ const updateCounselEmailsSchema = z.object({
   counselEmails: z.string().min(1),
 });
 
+function parseCounselEmailInput(value: string) {
+  return value
+    .split(/[;\n,]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 function parseScheduledDateInput(value: string) {
   const trimmed = value.trim();
 
@@ -710,10 +717,7 @@ export async function updateCounselEmailsAction(
     };
   }
 
-  const emails = parsed.data.counselEmails
-    .split(";")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const emails = parseCounselEmailInput(parsed.data.counselEmails);
 
   const emailSchema = z.string().email();
   const invalidEmail = emails.find((email) => !emailSchema.safeParse(email).success);
@@ -771,6 +775,8 @@ export async function updateCounselEmailsAction(
       emailCount: emails.length,
     },
   });
+
+  revalidatePath("/");
 
   return {
     error: "",
