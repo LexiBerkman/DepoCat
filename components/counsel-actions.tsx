@@ -142,7 +142,7 @@ export function CounselActions({
     <div className="stack">
       <div className="counsel-btn-row">
         <button
-          className="link-chip small-button"
+          className="link-chip small-button counsel-action-button"
           type="button"
           onClick={copyEmails}
           disabled={!emails.length}
@@ -152,7 +152,7 @@ export function CounselActions({
         </button>
         {!isScheduled && (
           <button
-            className="link-chip small-button"
+            className="link-chip small-button counsel-action-button"
             type="button"
             onClick={copyDraft}
           >

@@ -434,6 +434,10 @@ th:nth-child(5) {
   align-items: center;
 }
 
+.counsel-action-button {
+  min-width: 8.75rem;
+}
+
 /* Fallback modal — shown only when navigator.clipboard.writeText is denied */
 .draft-fallback-overlay {
   position: fixed;
