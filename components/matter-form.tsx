@@ -1,8 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { createMatterAction } from "@/lib/actions";
 
@@ -10,9 +9,13 @@ const initialState = {
   error: "",
 };
 
+function createDeponentField() {
+  return { id: crypto.randomUUID() };
+}
+
 export function MatterForm() {
   const [state, formAction, pending] = useActionState(createMatterAction, initialState);
-  const [deponents, setDeponents] = useState([{ id: crypto.randomUUID() }]);
+  const [deponents, setDeponents] = useState([createDeponentField()]);
 
   return (
     <form action={formAction} className="stack">
@@ -43,7 +46,7 @@ export function MatterForm() {
           <button
             className="button-secondary small-button"
             type="button"
-            onClick={() => setDeponents((current) => [...current, { id: crypto.randomUUID() }])}
+            onClick={() => setDeponents((current) => [...current, createDeponentField()])}
           >
             <Plus size={14} />
             Add another deponent

@@ -9,52 +9,14 @@ import { CounselEmailEditor } from "@/components/counsel-email-editor";
 import { DeleteDeponentButton } from "@/components/delete-deponent-button";
 import { LogEmailForm } from "@/components/log-email-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
-import { type EmailTemplateKey } from "@/lib/email-templates";
-
-function formatDate(value: Date | null) {
-  return value ? format(value, "MMM d, yyyy") : "Not set";
-}
-
-function toDate(value: string | Date | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-/** Reject bogus Excel zero-dates (1899-12-30, serial 0) stored in the DB. */
-function isValidScheduledDate(date: Date | null): boolean {
-  if (!date) return false;
-  return new Date(date).getFullYear() >= 1900;
-}
-
-function getFollowUpLabel(stage: string) {
-  switch (stage) {
-    case "FIRST_EMAIL_PENDING":
-      return { label: "Schedule", className: "pill-neutral" };
-    case "SECOND_EMAIL_PENDING":
-      return { label: "2nd email due", className: "pill-warning" };
-    case "FINAL_NOTICE_PENDING":
-      return { label: "Final email due", className: "pill-danger" };
-    case "SCHEDULED":
-      return { label: "Scheduled", className: "pill-success" };
-    default:
-      return { label: "Awaiting reply", className: "pill-neutral" };
-  }
-}
-
-/**
- * Determine which draft template to use based solely on the last logged
- * communication type — not the follow-up stage.  This keeps the logic
- * deterministic and independent of any stage drift.
- */
-function getDraftTemplate(lastCommunicationType?: CommunicationType): EmailTemplateKey {
-  if (lastCommunicationType === "FIRST_REQUEST") return "SECOND";
-  if (lastCommunicationType === "SECOND_REQUEST" || lastCommunicationType === "FINAL_NOTICE") return "FINAL";
-  return "FIRST";
-}
+import {
+  formatOptionalDate,
+  getDefaultCommunicationType,
+  getDraftTemplate,
+  getFollowUpLabel,
+  isValidScheduledDate,
+  toDate,
+} from "@/lib/deposition-workflow";
 
 export function DepositionRow({
   referenceNumber,
@@ -88,19 +50,20 @@ export function DepositionRow({
   counselEmails: string[];
   counselSummary: string;
 }) {
-  const normalizedScheduledDate = toDate(scheduledDate);
-  const normalizedLastSentAt = toDate(lastCommunication?.sentAt);
+  const [currentScheduledDate, setCurrentScheduledDate] = useState(toDate(scheduledDate));
   const [currentFollowUpStage, setCurrentFollowUpStage] = useState(followUpStage);
   const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
   const [isDeleted, setIsDeleted] = useState(false);
   const [currentCounselEmails, setCurrentCounselEmails] = useState(counselEmails);
+  const [currentLastCommunication, setCurrentLastCommunication] = useState(lastCommunication);
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
-  const lastSentDateLabel = normalizedLastSentAt ? format(normalizedLastSentAt, "MMMM d, yyyy") : null;
+  const currentLastSentAt = toDate(currentLastCommunication?.sentAt);
+  const lastSentDateLabel = currentLastSentAt ? format(currentLastSentAt, "MMMM d, yyyy") : null;
 
   // A deposition is only truly scheduled if the stored date is a real date
   // (not an Excel zero-date artifact).
-  const isScheduled = isValidScheduledDate(normalizedScheduledDate) || currentFollowUpStage === "SCHEDULED";
+  const isScheduled = isValidScheduledDate(currentScheduledDate) || currentFollowUpStage === "SCHEDULED";
 
   if (isDeleted) {
     return null;
@@ -119,8 +82,9 @@ export function DepositionRow({
       <td>
         <ScheduledDateForm
           depositionTargetId={depositionTargetId}
-          scheduledDate={normalizedScheduledDate}
-          onUpdated={({ followUpStage: nextStage, followUpDueDateValue }) => {
+          scheduledDate={currentScheduledDate}
+          onUpdated={({ scheduledDateValue, followUpStage: nextStage, followUpDueDateValue }) => {
+            setCurrentScheduledDate(toDate(scheduledDateValue));
             setCurrentFollowUpStage(nextStage);
             setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
           }}
@@ -129,28 +93,30 @@ export function DepositionRow({
       <td className="next-step-cell">
         <div className="next-step-summary">
           <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-          <div className="muted small">Due {formatDate(currentFollowUpDueDate)}</div>
+          <div className="muted small">Due {formatOptionalDate(currentFollowUpDueDate)}</div>
         </div>
         <LogEmailForm
           depositionTargetId={depositionTargetId}
-          defaultType={
-            currentFollowUpStage === "SECOND_EMAIL_PENDING"
-              ? "FIRST_REQUEST"
-              : currentFollowUpStage === "FINAL_NOTICE_PENDING"
-                ? "SECOND_REQUEST"
-                : "FINAL_NOTICE"
-          }
+          defaultType={getDefaultCommunicationType(currentFollowUpStage)}
+          onLogged={({ communicationType, sentAt, followUpStage: nextStage, followUpDueDateValue }) => {
+            setCurrentLastCommunication({
+              communicationType,
+              sentAt,
+            });
+            setCurrentFollowUpStage(nextStage);
+            setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
+          }}
         />
       </td>
       <td>
         <div className="small">
-          {normalizedLastSentAt ? format(normalizedLastSentAt, "MMM d, yyyy h:mm a") : "Not logged"}
+          {currentLastSentAt ? format(currentLastSentAt, "MMM d, yyyy h:mm a") : "Not logged"}
         </div>
         <div className="muted small">
-          {lastCommunication
-            ? lastCommunication.communicationType === "FIRST_REQUEST"
+          {currentLastCommunication
+            ? currentLastCommunication.communicationType === "FIRST_REQUEST"
               ? "1st email"
-              : lastCommunication.communicationType === "SECOND_REQUEST"
+              : currentLastCommunication.communicationType === "SECOND_REQUEST"
                 ? "2nd email"
                 : "Final email"
             : "No communication logged"}
@@ -163,7 +129,7 @@ export function DepositionRow({
             deponentName={deponentName}
             clientName={clientName}
             referenceNumber={referenceNumber}
-            draftTemplate={getDraftTemplate(lastCommunication?.communicationType)}
+            draftTemplate={getDraftTemplate(currentLastCommunication?.communicationType)}
             lastSentDateLabel={lastSentDateLabel}
             isScheduled={isScheduled}
           />

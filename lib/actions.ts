@@ -5,11 +5,11 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { CommunicationType, FollowUpStage } from "@prisma/client";
 import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
 import { authenticateUser, createSession, destroySession, requireOwner, requireSession } from "@/lib/auth";
+import { getFollowUpStateFromHistory } from "@/lib/deposition-workflow";
 import { ImportError, parseWorkbook, maybeDate, splitMultiValue } from "@/lib/import";
 import { isLoginBlocked, recordLoginAttempt } from "@/lib/login-security";
 import { prisma } from "@/lib/prisma";
@@ -89,42 +89,6 @@ function parseScheduledDateInput(value: string) {
   }
 
   return null;
-}
-
-function getFollowUpStateFromHistory(lastCommunicationType?: CommunicationType | null): {
-  status: "NEEDS_REQUEST" | "REQUESTED";
-  followUpStage: FollowUpStage;
-  followUpDueDate: Date | null;
-} {
-  if (lastCommunicationType === "FINAL_NOTICE") {
-    return {
-      status: "REQUESTED",
-      followUpStage: "AWAITING_RESPONSE",
-      followUpDueDate: null,
-    };
-  }
-
-  if (lastCommunicationType === "SECOND_REQUEST") {
-    return {
-      status: "REQUESTED",
-      followUpStage: "FINAL_NOTICE_PENDING",
-      followUpDueDate: addDays(new Date(), 3),
-    };
-  }
-
-  if (lastCommunicationType === "FIRST_REQUEST") {
-    return {
-      status: "REQUESTED",
-      followUpStage: "SECOND_EMAIL_PENDING",
-      followUpDueDate: addDays(new Date(), 3),
-    };
-  }
-
-  return {
-    status: "NEEDS_REQUEST",
-    followUpStage: "FIRST_EMAIL_PENDING",
-    followUpDueDate: null,
-  };
 }
 
 export async function loginAction(_: { error: string }, formData: FormData) {
@@ -354,7 +318,14 @@ export async function ownerResetPasswordAction(
 }
 
 export async function logCommunicationAction(
-  _: { error: string; success: string },
+  _: {
+    error: string;
+    success: string;
+    communicationType: string;
+    sentAt: string;
+    followUpStage: string;
+    followUpDueDateValue: string;
+  },
   formData: FormData,
 ) {
   const session = await requireSession();
@@ -364,7 +335,14 @@ export async function logCommunicationAction(
   });
 
   if (!parsed.success) {
-    return { error: "Select a valid communication type.", success: "" };
+    return {
+      error: "Select a valid communication type.",
+      success: "",
+      communicationType: "",
+      sentAt: "",
+      followUpStage: "",
+      followUpDueDateValue: "",
+    };
   }
 
   const deposition = await prisma.depositionTarget.findUnique({
@@ -385,7 +363,14 @@ export async function logCommunicationAction(
   });
 
   if (!deposition) {
-    return { error: "That deponent record could not be found.", success: "" };
+    return {
+      error: "That deponent record could not be found.",
+      success: "",
+      communicationType: "",
+      sentAt: "",
+      followUpStage: "",
+      followUpDueDateValue: "",
+    };
   }
 
   const sentAt = new Date();
@@ -439,7 +424,14 @@ export async function logCommunicationAction(
   });
 
   revalidatePath("/");
-  return { error: "", success: "Logged." };
+  return {
+    error: "",
+    success: "Logged.",
+    communicationType: parsed.data.communicationType,
+    sentAt: sentAt.toISOString(),
+    followUpStage,
+    followUpDueDateValue: followUpDueDate.toISOString(),
+  };
 }
 
 export async function createMatterAction(_: { error: string }, formData: FormData) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useActionState } from "react";
 
 import { logCommunicationAction } from "@/lib/actions";
@@ -7,16 +8,40 @@ import { logCommunicationAction } from "@/lib/actions";
 const initialState = {
   error: "",
   success: "",
+  communicationType: "",
+  sentAt: "",
+  followUpStage: "",
+  followUpDueDateValue: "",
 };
 
 export function LogEmailForm({
   depositionTargetId,
   defaultType,
+  onLogged,
 }: {
   depositionTargetId: string;
   defaultType: "FIRST_REQUEST" | "SECOND_REQUEST" | "FINAL_NOTICE";
+  onLogged?: (payload: {
+    communicationType: "FIRST_REQUEST" | "SECOND_REQUEST" | "FINAL_NOTICE";
+    sentAt: string;
+    followUpStage: string;
+    followUpDueDateValue: string;
+  }) => void;
 }) {
   const [state, formAction, pending] = useActionState(logCommunicationAction, initialState);
+
+  useEffect(() => {
+    if (!state.success || !state.communicationType || !onLogged) {
+      return;
+    }
+
+    onLogged({
+      communicationType: state.communicationType as "FIRST_REQUEST" | "SECOND_REQUEST" | "FINAL_NOTICE",
+      sentAt: state.sentAt,
+      followUpStage: state.followUpStage,
+      followUpDueDateValue: state.followUpDueDateValue,
+    });
+  }, [onLogged, state.communicationType, state.followUpDueDateValue, state.followUpStage, state.sentAt, state.success]);
 
   return (
     <form action={formAction} className="row-wrap">

@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 
 import { updateScheduledDateAction } from "@/lib/actions";
 
@@ -41,8 +41,6 @@ export function ScheduledDateForm({
   }) => void;
 }) {
   const [state, formAction, pending] = useActionState(updateScheduledDateAction, initialState);
-  const formRef = useRef<HTMLFormElement>(null);
-
   useEffect(() => {
     if (!state.success || !onUpdated) {
       return;
@@ -56,7 +54,7 @@ export function ScheduledDateForm({
   }, [onUpdated, state.followUpDueDateValue, state.followUpStage, state.scheduledDateValue, state.success]);
 
   return (
-    <form ref={formRef} action={formAction} className="stack scheduled-form">
+    <form action={formAction} className="stack scheduled-form">
       <input type="hidden" name="depositionTargetId" value={depositionTargetId} />
       <input
         className="field"
