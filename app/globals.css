@@ -57,6 +57,14 @@ textarea {
   padding: 1rem 0 3rem;
 }
 
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .hero-card,
 .panel,
 .table-shell,
@@ -127,6 +135,10 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.security-admin-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .stat-card,
 .panel {
   border-radius: var(--radius-md);
@@ -175,7 +187,8 @@ textarea {
 
 .button,
 .button-secondary,
-.link-chip {
+.link-chip,
+.nav-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -199,7 +212,8 @@ textarea {
 }
 
 .button-secondary,
-.link-chip {
+.link-chip,
+.nav-chip {
   background: white;
   border-color: var(--line);
   color: var(--ink);
@@ -207,8 +221,15 @@ textarea {
 
 .button:hover,
 .button-secondary:hover,
-.link-chip:hover {
+.link-chip:hover,
+.nav-chip:hover {
   transform: translateY(-1px);
+}
+
+.nav-chip-active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: white;
+  border-color: transparent;
 }
 
 .table-shell {
@@ -325,9 +346,15 @@ th {
   .hero-grid,
   .content-grid,
   .security-grid,
+  .security-admin-grid,
   .stats-grid,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .top-nav {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   th:nth-child(5),

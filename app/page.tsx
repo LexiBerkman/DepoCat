@@ -1,13 +1,11 @@
 import { format } from "date-fns";
 import { CalendarClock, Cat, ShieldCheck } from "lucide-react";
 
-import { ChangePasswordForm } from "@/components/change-password-form";
 import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
 import { LogEmailForm } from "@/components/log-email-form";
-import { LogoutButton } from "@/components/logout-button";
 import { MatterForm } from "@/components/matter-form";
-import { OwnerResetPasswordForm } from "@/components/owner-reset-password-form";
+import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { securityChecklist } from "@/lib/security";
@@ -35,38 +33,23 @@ function getFollowUpLabel(stage: string) {
 export default async function HomePage() {
   const session = await requireSession();
 
-  const [matters, users, recentAudit] = await Promise.all([
-    prisma.matter.findMany({
-      orderBy: { updatedAt: "desc" },
-      include: {
-        depositions: {
-          orderBy: { updatedAt: "desc" },
-          include: {
-            communications: {
-              orderBy: { sentAt: "desc" },
-              take: 1,
-            },
+  const matters = await prisma.matter.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: {
+      depositions: {
+        orderBy: { updatedAt: "desc" },
+        include: {
+          communications: {
+            orderBy: { sentAt: "desc" },
+            take: 1,
           },
         },
-        opposingCounsel: {
-          orderBy: { fullName: "asc" },
-        },
       },
-    }),
-    session.role === "OWNER"
-      ? prisma.user.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: [{ role: "asc" }, { fullName: "asc" }],
-        })
-      : Promise.resolve([]),
-    session.role === "OWNER"
-      ? prisma.auditLog.findMany({
-          orderBy: { createdAt: "desc" },
-          take: 8,
-          include: { user: true },
-        })
-      : Promise.resolve([]),
-  ]);
+      opposingCounsel: {
+        orderBy: { fullName: "asc" },
+      },
+    },
+  });
 
   const stats = {
     matters: matters.length,
@@ -80,6 +63,7 @@ export default async function HomePage() {
 
   return (
     <main className="shell">
+      <TopNav currentPath="/" fullName={session.fullName} role={session.role} />
       <section className="hero-card">
         <div className="hero-grid">
           <div className="stack">
@@ -93,17 +77,12 @@ export default async function HomePage() {
               your fingertips, and move each deposition through the request-follow-up-schedule flow.
             </p>
             <div className="row-wrap">
-              <span className="link-chip">Signed in as {session.fullName}</span>
-              <span className="link-chip">{session.role === "OWNER" ? "Owner" : "Paralegal"}</span>
-            </div>
-            <div className="row-wrap">
               <a className="button" href="#matter-form">
                 Add a matter
               </a>
               <a className="button-secondary" href="#import-panel">
                 Import Excel
               </a>
-              <LogoutButton />
             </div>
           </div>
           <div className="panel stack">
@@ -165,122 +144,6 @@ export default async function HomePage() {
           <ImportForm />
         </div>
       </section>
-
-      <section className="content-grid">
-        <div className="panel stack">
-          <div>
-            <h2 className="section-title">Account security</h2>
-            <p className="muted">
-              Replace the temporary password with a private one you keep in your password manager.
-            </p>
-          </div>
-          <div className="stat-card stack">
-            <div className="small muted">Current sign-in</div>
-            <strong>{session.email}</strong>
-            <div className="muted small">
-              {session.role === "OWNER" ? "Owner access" : "Paralegal access"}
-            </div>
-          </div>
-          <ChangePasswordForm />
-        </div>
-
-        <div className="panel stack">
-          <div>
-            <h2 className="section-title">Security habits</h2>
-            <p className="muted">
-              A few practical steps will make this much safer for daily legal work.
-            </p>
-          </div>
-          <div className="stack">
-            <div className="stat-card">
-              <strong>Use unique passwords</strong>
-              <div className="muted small">
-                Give each DepoCat user a separate password that is not reused anywhere else.
-              </div>
-            </div>
-            <div className="stat-card">
-              <strong>Sign out shared devices</strong>
-              <div className="muted small">
-                Changing a password will revoke the other active sessions for that user.
-              </div>
-            </div>
-            <div className="stat-card">
-              <strong>Next security step</strong>
-              <div className="muted small">
-                We should add MFA next if this is becoming part of real daily case work.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {session.role === "OWNER" ? (
-        <section className="content-grid">
-          <div className="panel stack">
-            <div>
-              <h2 className="section-title">Authorized team</h2>
-              <p className="muted">
-                These are the active online logins currently configured for DepoCat.
-              </p>
-            </div>
-            <div className="stack">
-              {users.map((user) => (
-                <div key={user.id} className="stat-card">
-                  <div className="row">
-                    <strong>{user.fullName}</strong>
-                    <span className={`pill ${user.role === "OWNER" ? "pill-danger" : "pill-neutral"}`}>
-                      {user.role === "OWNER" ? "Owner" : "Paralegal"}
-                    </span>
-                  </div>
-                  <div className="muted small">{user.email}</div>
-                  <div className="muted small">
-                    Last login {user.lastLoginAt ? format(user.lastLoginAt, "MMM d, yyyy h:mm a") : "Not yet"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel stack">
-            <div>
-              <h2 className="section-title">Recent security activity</h2>
-              <p className="muted">
-                A lightweight audit trail for sign-ins, imports, and matter changes.
-              </p>
-            </div>
-            <div className="stack">
-              {recentAudit.map((event) => (
-                <div key={event.id} className="stat-card">
-                  <div className="row">
-                    <strong>{event.action}</strong>
-                    <span className="muted small">{format(event.createdAt, "MMM d, h:mm a")}</span>
-                  </div>
-                  <div className="muted small">
-                    {event.user?.fullName ?? "System"} · {event.entityType}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel stack">
-            <div>
-              <h2 className="section-title">Owner password reset</h2>
-              <p className="muted">
-                Generate a temporary password for a user who cannot get back in.
-              </p>
-            </div>
-            <OwnerResetPasswordForm
-              users={users.map((user) => ({
-                id: user.id,
-                email: user.email,
-                fullName: user.fullName,
-                role: user.role,
-              }))}
-            />
-          </div>
-        </section>
-      ) : null}
 
       <section className="table-shell">
         <div className="row">
