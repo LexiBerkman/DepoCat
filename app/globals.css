@@ -290,7 +290,8 @@ textarea {
   border-radius: var(--radius-lg);
   padding: 1rem;
   margin-top: 1.5rem;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .table-shell > .row {
