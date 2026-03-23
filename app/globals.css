@@ -311,10 +311,15 @@ td {
 }
 
 th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--card-strong);
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+  box-shadow: inset 0 -1px 0 var(--line);
 }
 
 .pill {
