@@ -8,6 +8,7 @@ import { MatterForm } from "@/components/matter-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
+import { type EmailTemplateKey } from "@/lib/email-templates";
 import { prisma } from "@/lib/prisma";
 import { securityChecklist } from "@/lib/security";
 
@@ -27,6 +28,18 @@ function getFollowUpLabel(stage: string) {
       return { label: "Scheduled", className: "pill-success" };
     default:
       return { label: "Awaiting reply", className: "pill-neutral" };
+  }
+}
+
+function getDefaultEmailTemplate(stage: string): EmailTemplateKey {
+  switch (stage) {
+    case "SECOND_EMAIL_PENDING":
+      return "SECOND";
+    case "FINAL_NOTICE_PENDING":
+    case "AWAITING_RESPONSE":
+      return "FINAL";
+    default:
+      return "FIRST";
   }
 }
 
@@ -229,7 +242,12 @@ export default async function HomePage() {
                     </td>
                     <td>
                       <div className="stack">
-                        <CounselActions emails={counselEmails} />
+                        <CounselActions
+                          emails={counselEmails}
+                          deponentName={deposition.fullName}
+                          referenceNumber={matter.referenceNumber}
+                          defaultTemplate={getDefaultEmailTemplate(deposition.followUpStage)}
+                        />
                         <div className="small muted">
                           {matter.opposingCounsel
                             .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
