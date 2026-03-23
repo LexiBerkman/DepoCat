@@ -18,7 +18,13 @@ function toInputValue(date: Date | null) {
     return "";
   }
 
-  return format(new Date(date), "MM/dd/yyyy");
+  const d = new Date(date);
+  // Reject bogus Excel zero-dates (e.g. 1899-12-30 serial 0)
+  if (d.getFullYear() < 1900) {
+    return "";
+  }
+
+  return format(d, "MM/dd/yyyy");
 }
 
 export function ScheduledDateForm({

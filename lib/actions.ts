@@ -63,16 +63,20 @@ function parseScheduledDateInput(value: string) {
     return null;
   }
 
+  // yyyy-mm-dd (ISO)
   const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, year, month, day] = isoMatch;
+    if (Number(year) < 1900) return null;
     const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  const dayFirstMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (dayFirstMatch) {
-    const [, day, month, year] = dayFirstMatch;
+  // mm/dd/yyyy (US format — matches the input placeholder)
+  const mdyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdyMatch) {
+    const [, month, day, year] = mdyMatch;
+    if (Number(year) < 1900) return null;
     const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }

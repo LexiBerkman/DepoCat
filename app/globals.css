@@ -372,10 +372,41 @@ th {
   word-break: break-word;
 }
 
+/* Draft textarea — only ever shown inside the fallback modal */
 .counsel-assist-field {
   width: 100%;
   resize: vertical;
   white-space: pre-wrap;
+}
+
+.counsel-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Fallback modal — shown only when navigator.clipboard.writeText is denied */
+.draft-fallback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(31, 26, 21, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.draft-fallback-panel {
+  background: var(--card-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  width: min(540px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .scheduled-form {

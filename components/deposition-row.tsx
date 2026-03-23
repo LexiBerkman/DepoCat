@@ -13,6 +13,12 @@ function formatDate(value: Date | null) {
   return value ? format(value, "MMM d, yyyy") : "Not set";
 }
 
+/** Reject bogus Excel zero-dates (1899-12-30, serial 0) stored in the DB. */
+function isValidScheduledDate(date: Date | null): boolean {
+  if (!date) return false;
+  return new Date(date).getFullYear() >= 1900;
+}
+
 function getFollowUpLabel(stage: string) {
   switch (stage) {
     case "FIRST_EMAIL_PENDING":
@@ -28,27 +34,14 @@ function getFollowUpLabel(stage: string) {
   }
 }
 
-function getDraftEmailTemplate(stage: string, lastCommunicationType?: CommunicationType): EmailTemplateKey {
-  if (!lastCommunicationType) {
-    if (stage === "SECOND_EMAIL_PENDING") {
-      return "SECOND";
-    }
-
-    if (stage === "FINAL_NOTICE_PENDING") {
-      return "FINAL";
-    }
-
-    return "FIRST";
-  }
-
-  if (lastCommunicationType === "FIRST_REQUEST") {
-    return "SECOND";
-  }
-
-  if (lastCommunicationType === "SECOND_REQUEST" || lastCommunicationType === "FINAL_NOTICE") {
-    return "FINAL";
-  }
-
+/**
+ * Determine which draft template to use based solely on the last logged
+ * communication type — not the follow-up stage.  This keeps the logic
+ * deterministic and independent of any stage drift.
+ */
+function getDraftTemplate(lastCommunicationType?: CommunicationType): EmailTemplateKey {
+  if (lastCommunicationType === "FIRST_REQUEST") return "SECOND";
+  if (lastCommunicationType === "SECOND_REQUEST" || lastCommunicationType === "FINAL_NOTICE") return "FINAL";
   return "FIRST";
 }
 
@@ -87,6 +80,10 @@ export function DepositionRow({
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
   const lastSentDateLabel = lastCommunication ? format(lastCommunication.sentAt, "MMMM d, yyyy") : null;
+
+  // A deposition is only truly scheduled if the stored date is a real date
+  // (not an Excel zero-date artifact).
+  const isScheduled = isValidScheduledDate(scheduledDate) || currentFollowUpStage === "SCHEDULED";
 
   return (
     <tr>
@@ -141,9 +138,11 @@ export function DepositionRow({
           <CounselActions
             emails={counselEmails}
             deponentName={deponentName}
+            clientName={clientName}
             referenceNumber={referenceNumber}
-            draftTemplate={getDraftEmailTemplate(currentFollowUpStage, lastCommunication?.communicationType)}
+            draftTemplate={getDraftTemplate(lastCommunication?.communicationType)}
             lastSentDateLabel={lastSentDateLabel}
+            isScheduled={isScheduled}
           />
           <div className="small muted">{counselSummary}</div>
         </div>

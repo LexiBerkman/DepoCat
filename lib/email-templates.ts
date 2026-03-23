@@ -7,15 +7,18 @@ export function buildEmailSubject(deponentName: string, referenceNumber: string)
 export function buildEmailBody(params: {
   template: EmailTemplateKey;
   deponentName: string;
+  clientName?: string | null;
   lastSentDateLabel?: string | null;
 }) {
-  const { template, deponentName, lastSentDateLabel } = params;
+  const { template, deponentName, clientName, lastSentDateLabel } = params;
+
+  const matterClause = clientName ? ` in the matter of ${clientName}` : "";
 
   if (template === "FIRST") {
     return [
       "Counsel:",
       "",
-      `I am writing to schedule the deposition of ${deponentName}. Please send me three dates and times that work for your calendar, and if one of those dates works for us, we will send out the proper notice.`,
+      `I am writing to schedule the deposition of ${deponentName}${matterClause}. Please send me three dates and times that work for your calendar, and if one of those dates works for us, we will send out the proper notice.`,
       "",
       "Thank you.",
     ].join("\n");
@@ -45,6 +48,7 @@ export function buildEmailBody(params: {
 export function buildEmailDraft(params: {
   template: EmailTemplateKey;
   deponentName: string;
+  clientName?: string | null;
   referenceNumber: string;
   lastSentDateLabel?: string | null;
 }) {
@@ -52,6 +56,7 @@ export function buildEmailDraft(params: {
   const body = buildEmailBody({
     template: params.template,
     deponentName: params.deponentName,
+    clientName: params.clientName,
     lastSentDateLabel: params.lastSentDateLabel,
   });
 
