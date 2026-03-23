@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CalendarClock, Cat, ShieldCheck } from "lucide-react";
+import { CalendarClock, Cat, PawPrint, ShieldCheck } from "lucide-react";
 
 import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
@@ -76,6 +76,10 @@ export default async function HomePage() {
               Track your matters by reference number, keep every deponent and opposing counsel at
               your fingertips, and move each deposition through the request-follow-up-schedule flow.
             </p>
+            <div className="cat-note">
+              <PawPrint size={16} />
+              Built for the practical work of herding schedules, dates, and counsel cats.
+            </div>
             <div className="row-wrap">
               <a className="button" href="#matter-form">
                 Add a matter
@@ -94,6 +98,10 @@ export default async function HomePage() {
               First email, wait 3 days. Second email, wait 3 days. Final email if still silent.
               DepoCat surfaces the next action so you and your paralegal can keep momentum.
             </p>
+            <div className="mini-callout">
+              <Cat size={16} />
+              No missed follow-ups. No feral spreadsheets.
+            </div>
             <div className="security-grid">
               {securityChecklist.map((item) => (
                 <div key={item} className="stat-card">
@@ -150,6 +158,10 @@ export default async function HomePage() {
           <div>
             <h2 className="section-title">Deposition tracker</h2>
             <p className="muted">Every matter, deponent, deadline, and contact path in one place.</p>
+          </div>
+          <div className="tracker-tag">
+            <PawPrint size={16} />
+            Herd the cats
           </div>
         </div>
         <table>

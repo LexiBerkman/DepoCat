@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { Cat, PawPrint } from "lucide-react";
 
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { OwnerResetPasswordForm } from "@/components/owner-reset-password-form";
@@ -31,12 +32,19 @@ export default async function SecurityPage() {
 
       <section className="hero-card">
         <div className="stack">
-          <span className="badge">Security controls and account management</span>
+          <span className="badge">
+            <Cat size={16} />
+            Security controls and account management
+          </span>
           <h1 className="hero-title">Security</h1>
           <p className="hero-subtitle">
             Keep passwords current, manage user access, and review recent activity without cluttering
             the deposition workflow screen.
           </p>
+          <div className="cat-note">
+            <PawPrint size={16} />
+            The locks, logs, and account controls stay here instead of prowling across the tracker.
+          </div>
         </div>
       </section>
 

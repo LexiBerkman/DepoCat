@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Cat, ShieldCheck } from "lucide-react";
 
 import { LogoutButton } from "@/components/logout-button";
 
@@ -15,12 +16,14 @@ export function TopNav({
     <div className="top-nav">
       <div className="row-wrap">
         <Link className={currentPath === "/" ? "nav-chip nav-chip-active" : "nav-chip"} href="/">
+          <Cat size={16} />
           Tracker
         </Link>
         <Link
           className={currentPath === "/security" ? "nav-chip nav-chip-active" : "nav-chip"}
           href="/security"
         >
+          <ShieldCheck size={16} />
           Security
         </Link>
       </div>
