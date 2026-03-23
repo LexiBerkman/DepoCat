@@ -44,6 +44,26 @@ async function main() {
     password: process.env.DEPOCAT_PARALEGAL_PASSWORD,
     role: "PARALEGAL",
   });
+
+  const legacyUsers = [
+    {
+      email: "owner@depocat.local",
+      expectedEmail: process.env.DEPOCAT_OWNER_EMAIL?.toLowerCase(),
+    },
+    {
+      email: "paralegal@depocat.local",
+      expectedEmail: process.env.DEPOCAT_PARALEGAL_EMAIL?.toLowerCase(),
+    },
+  ];
+
+  for (const legacyUser of legacyUsers) {
+    if (legacyUser.expectedEmail && legacyUser.expectedEmail !== legacyUser.email) {
+      await prisma.user.updateMany({
+        where: { email: legacyUser.email },
+        data: { status: "DISABLED" },
+      });
+    }
+  }
 }
 
 main()
