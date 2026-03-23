@@ -367,8 +367,7 @@ th {
   font-size: 0.88rem;
 }
 
-.counsel-email-list {
-  justify-content: flex-start;
+.counsel-email-field {
   text-align: left;
   word-break: break-word;
 }
