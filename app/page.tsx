@@ -5,6 +5,7 @@ import { ChangePasswordForm } from "@/components/change-password-form";
 import { ImportForm } from "@/components/import-form";
 import { LogoutButton } from "@/components/logout-button";
 import { MatterForm } from "@/components/matter-form";
+import { OwnerResetPasswordForm } from "@/components/owner-reset-password-form";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { securityChecklist } from "@/lib/security";
@@ -252,6 +253,23 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="panel stack">
+            <div>
+              <h2 className="section-title">Owner password reset</h2>
+              <p className="muted">
+                Generate a temporary password for a user who cannot get back in.
+              </p>
+            </div>
+            <OwnerResetPasswordForm
+              users={users.map((user) => ({
+                id: user.id,
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role,
+              }))}
+            />
           </div>
         </section>
       ) : null}

@@ -1,12 +1,14 @@
 "use server";
 
+import { randomBytes } from "crypto";
+
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
-import { authenticateUser, createSession, destroySession, requireSession } from "@/lib/auth";
+import { authenticateUser, createSession, destroySession, requireOwner, requireSession } from "@/lib/auth";
 import { parseWorkbook, maybeDate } from "@/lib/import";
 import { isLoginBlocked, recordLoginAttempt } from "@/lib/login-security";
 import { prisma } from "@/lib/prisma";
@@ -38,6 +40,10 @@ const changePasswordSchema = z
     message: "The new passwords did not match.",
     path: ["confirmPassword"],
   });
+
+const ownerResetSchema = z.object({
+  targetUserId: z.string().min(1),
+});
 
 export async function loginAction(_: { error: string }, formData: FormData) {
   const { ipAddress, userAgent } = await getRequestContext();
@@ -195,6 +201,73 @@ export async function changePasswordAction(
   return {
     error: "",
     success: "Password updated. Other active sessions for this user have been signed out.",
+  };
+}
+
+export async function ownerResetPasswordAction(
+  _: { error: string; success: string; temporaryPassword: string; targetEmail: string },
+  formData: FormData,
+) {
+  const session = await requireOwner();
+  const parsed = ownerResetSchema.safeParse({
+    targetUserId: formData.get("targetUserId"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: "Choose a user before issuing a reset.",
+      success: "",
+      temporaryPassword: "",
+      targetEmail: "",
+    };
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: parsed.data.targetUserId },
+  });
+
+  if (!targetUser || targetUser.status !== "ACTIVE") {
+    return {
+      error: "That user account is not available for reset.",
+      success: "",
+      temporaryPassword: "",
+      targetEmail: "",
+    };
+  }
+
+  const temporaryPassword = randomBytes(18).toString("base64");
+  const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: targetUser.id },
+      data: { passwordHash },
+    }),
+    prisma.session.updateMany({
+      where: {
+        userId: targetUser.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    }),
+  ]);
+
+  await logAudit({
+    userId: session.userId,
+    action: "OWNER_PASSWORD_RESET",
+    entityType: "User",
+    entityId: targetUser.id,
+    metadata: { targetEmail: targetUser.email },
+  });
+
+  revalidatePath("/");
+  return {
+    error: "",
+    success: `Temporary password issued for ${targetUser.email}. Share it securely and have them change it after signing in.`,
+    temporaryPassword,
+    targetEmail: targetUser.email,
   };
 }
 

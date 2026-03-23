@@ -306,6 +306,16 @@ th {
   font-size: 0.92rem;
 }
 
+.password-chip {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: #fff4dd;
+  border: 1px solid var(--line);
+  word-break: break-all;
+}
+
 @media (max-width: 980px) {
   .hero-grid,
   .content-grid,
