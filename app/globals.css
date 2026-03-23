@@ -248,6 +248,12 @@ textarea {
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
+.link-chip[aria-disabled="true"],
+.link-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .small-button {
   padding: 0.5rem 0.8rem;
   font-size: 0.85rem;
@@ -359,6 +365,12 @@ th {
 
 .small {
   font-size: 0.88rem;
+}
+
+.counsel-email-list {
+  justify-content: flex-start;
+  text-align: left;
+  word-break: break-word;
 }
 
 .login-page {
