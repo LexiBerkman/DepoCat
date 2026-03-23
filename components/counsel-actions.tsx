@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { buildEmailDraft, type EmailTemplateKey } from "@/lib/email-templates";
 
@@ -20,17 +20,29 @@ export function CounselActions({
 }) {
   const [copiedItem, setCopiedItem] = useState<"emails" | "draft" | null>(null);
   const [copyError, setCopyError] = useState("");
-  const emailFieldRef = useRef<HTMLInputElement>(null);
 
-  function selectEmails() {
-    emailFieldRef.current?.focus();
-    emailFieldRef.current?.select();
-    emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
+  function copyTextWithFallback(value: string) {
+    const textArea = document.createElement("textarea");
+    textArea.value = value;
+    textArea.setAttribute("readonly", "true");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, textArea.value.length);
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return copied;
   }
 
-  function copyWithFallback() {
-    selectEmails();
-    return document.execCommand("copy");
+  async function copyText(value: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+
+    return copyTextWithFallback(value);
   }
 
   async function copyEmails() {
@@ -42,23 +54,17 @@ export function CounselActions({
     const emailList = emails.join("; ");
 
     try {
-      selectEmails();
+      const copiedToClipboard = await copyText(emailList);
 
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(emailList);
-      } else {
-        const copiedToClipboard = copyWithFallback();
-
-        if (!copiedToClipboard) {
-          throw new Error("Copy failed");
-        }
+      if (!copiedToClipboard) {
+        throw new Error("Copy failed");
       }
 
       setCopyError("");
       setCopiedItem("emails");
       window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
-      const copiedToClipboard = copyWithFallback();
+      const copiedToClipboard = copyTextWithFallback(emailList);
 
       if (copiedToClipboard) {
         setCopyError("");
@@ -79,17 +85,25 @@ export function CounselActions({
     });
 
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(draft);
-      } else {
-        throw new Error("Clipboard API unavailable");
+      const copiedToClipboard = await copyText(draft);
+
+      if (!copiedToClipboard) {
+        throw new Error("Copy failed");
       }
 
       setCopyError("");
       setCopiedItem("draft");
       window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
-      setCopyError("Draft copy did not complete. Please try again.");
+      const copiedToClipboard = copyTextWithFallback(draft);
+
+      if (copiedToClipboard) {
+        setCopyError("");
+        setCopiedItem("draft");
+        window.setTimeout(() => setCopiedItem(null), 1500);
+      } else {
+        setCopyError("Draft copy did not complete. Please try again.");
+      }
     }
   }
 
@@ -100,12 +114,10 @@ export function CounselActions({
         {copiedItem === "emails" ? "Copied emails" : "Copy emails"}
       </button>
       <input
-        ref={emailFieldRef}
         className="field counsel-email-field"
         type="text"
         value={emails.length ? emails.join("; ") : "No counsel emails saved"}
         readOnly
-        onFocus={selectEmails}
       />
       <button className="button-secondary small-button" type="button" onClick={copyDraft}>
         {copiedItem === "draft" ? "Copied draft" : "Draft email"}
