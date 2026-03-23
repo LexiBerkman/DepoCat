@@ -4,6 +4,7 @@ import { CalendarClock, Cat, ShieldCheck } from "lucide-react";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
+import { LogEmailForm } from "@/components/log-email-form";
 import { LogoutButton } from "@/components/logout-button";
 import { MatterForm } from "@/components/matter-form";
 import { OwnerResetPasswordForm } from "@/components/owner-reset-password-form";
@@ -40,6 +41,12 @@ export default async function HomePage() {
       include: {
         depositions: {
           orderBy: { updatedAt: "desc" },
+          include: {
+            communications: {
+              orderBy: { sentAt: "desc" },
+              take: 1,
+            },
+          },
         },
         opposingCounsel: {
           orderBy: { fullName: "asc" },
@@ -291,6 +298,7 @@ export default async function HomePage() {
               <th>Requested</th>
               <th>Scheduled</th>
               <th>Next step</th>
+              <th>Last email</th>
               <th>Opposing counsel</th>
             </tr>
           </thead>
@@ -299,6 +307,7 @@ export default async function HomePage() {
               matter.depositions.map((deposition) => {
                 const counselEmails = matter.opposingCounsel.map((counsel) => counsel.email);
                 const followUp = getFollowUpLabel(deposition.followUpStage);
+                const lastCommunication = deposition.communications[0];
                 const mailto = buildMailto({
                   to: counselEmails,
                   subject: `Deposition scheduling request - ${matter.referenceNumber}`,
@@ -325,6 +334,30 @@ export default async function HomePage() {
                     <td>
                       <div className={`pill ${followUp.className}`}>{followUp.label}</div>
                       <div className="muted small">Due {formatDate(deposition.followUpDueDate)}</div>
+                      <LogEmailForm
+                        depositionTargetId={deposition.id}
+                        defaultType={
+                          deposition.followUpStage === "SECOND_EMAIL_PENDING"
+                            ? "FIRST_REQUEST"
+                            : deposition.followUpStage === "FINAL_NOTICE_PENDING"
+                              ? "SECOND_REQUEST"
+                              : "FINAL_NOTICE"
+                        }
+                      />
+                    </td>
+                    <td>
+                      <div className="small">
+                        {lastCommunication ? format(lastCommunication.sentAt, "MMM d, yyyy h:mm a") : "Not logged"}
+                      </div>
+                      <div className="muted small">
+                        {lastCommunication
+                          ? lastCommunication.communicationType === "FIRST_REQUEST"
+                            ? "1st email"
+                            : lastCommunication.communicationType === "SECOND_REQUEST"
+                              ? "2nd email"
+                              : "Final email"
+                          : "No communication logged"}
+                      </div>
                     </td>
                     <td>
                       <div className="stack">

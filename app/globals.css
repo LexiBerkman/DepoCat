@@ -187,6 +187,11 @@ textarea {
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
+.small-button {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+}
+
 .button {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
   color: white;
@@ -329,6 +334,11 @@ th {
   td:nth-child(5),
   th:nth-child(6),
   td:nth-child(6) {
+    display: none;
+  }
+
+  th:nth-child(7),
+  td:nth-child(7) {
     display: none;
   }
 }

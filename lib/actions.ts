@@ -45,6 +45,11 @@ const ownerResetSchema = z.object({
   targetUserId: z.string().min(1),
 });
 
+const communicationSchema = z.object({
+  depositionTargetId: z.string().min(1),
+  communicationType: z.enum(["FIRST_REQUEST", "SECOND_REQUEST", "FINAL_NOTICE"]),
+});
+
 export async function loginAction(_: { error: string }, formData: FormData) {
   const { ipAddress, userAgent } = await getRequestContext();
   const parsed = loginSchema.safeParse({
@@ -269,6 +274,95 @@ export async function ownerResetPasswordAction(
     temporaryPassword,
     targetEmail: targetUser.email,
   };
+}
+
+export async function logCommunicationAction(
+  _: { error: string; success: string },
+  formData: FormData,
+) {
+  const session = await requireSession();
+  const parsed = communicationSchema.safeParse({
+    depositionTargetId: formData.get("depositionTargetId"),
+    communicationType: formData.get("communicationType"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Select a valid communication type.", success: "" };
+  }
+
+  const deposition = await prisma.depositionTarget.findUnique({
+    where: { id: parsed.data.depositionTargetId },
+    include: {
+      matter: {
+        include: {
+          opposingCounsel: {
+            orderBy: { fullName: "asc" },
+          },
+        },
+      },
+      communications: {
+        orderBy: { sentAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!deposition) {
+    return { error: "That deponent record could not be found.", success: "" };
+  }
+
+  const sentAt = new Date();
+  const recipients = deposition.matter.opposingCounsel.map((counsel) => counsel.email).join("; ");
+  const subject = `Deposition scheduling request - ${deposition.matter.referenceNumber}`;
+
+  const followUpStage =
+    parsed.data.communicationType === "FIRST_REQUEST"
+      ? "SECOND_EMAIL_PENDING"
+      : parsed.data.communicationType === "SECOND_REQUEST"
+        ? "FINAL_NOTICE_PENDING"
+        : "AWAITING_RESPONSE";
+
+  const followUpDueDate =
+    parsed.data.communicationType === "FINAL_NOTICE" ? addDays(sentAt, 1) : addDays(sentAt, 3);
+
+  await prisma.$transaction([
+    prisma.communicationLog.create({
+      data: {
+        depositionTargetId: deposition.id,
+        sentByUserId: session.userId,
+        communicationType: parsed.data.communicationType,
+        subject,
+        recipients,
+        sentAt,
+      },
+    }),
+    prisma.depositionTarget.update({
+      where: { id: deposition.id },
+      data: {
+        status: "REQUESTED",
+        requestedDate:
+          deposition.requestedDate ??
+          (parsed.data.communicationType === "FIRST_REQUEST" ? sentAt : deposition.requestedDate),
+        followUpStage,
+        followUpDueDate,
+        lastContactedAt: sentAt,
+      },
+    }),
+  ]);
+
+  await logAudit({
+    userId: session.userId,
+    action: "LOG_COMMUNICATION",
+    entityType: "DepositionTarget",
+    entityId: deposition.id,
+    metadata: {
+      communicationType: parsed.data.communicationType,
+      referenceNumber: deposition.matter.referenceNumber,
+    },
+  });
+
+  revalidatePath("/");
+  return { error: "", success: "Logged." };
 }
 
 export async function createMatterAction(_: { error: string }, formData: FormData) {

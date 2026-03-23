@@ -39,6 +39,7 @@ model DepositionTarget {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   matter          Matter           @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  communications  CommunicationLog[]
 
   @@index([matterId])
   @@index([status])
@@ -74,6 +75,7 @@ model User {
   auditLogs      AuditLog[]
   sessions       Session[]
   loginAttempts  LoginAttempt[]
+  communications CommunicationLog[]
 
   @@index([role])
   @@index([status])
@@ -91,6 +93,22 @@ model AuditLog {
 
   @@index([userId])
   @@index([entityType, createdAt])
+}
+
+model CommunicationLog {
+  id                 String            @id @default(cuid())
+  depositionTargetId String
+  sentByUserId       String?
+  communicationType  CommunicationType
+  subject            String?
+  recipients         String?
+  sentAt             DateTime          @default(now())
+  notes              String?
+  depositionTarget   DepositionTarget  @relation(fields: [depositionTargetId], references: [id], onDelete: Cascade)
+  sentByUser         User?             @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
+
+  @@index([depositionTargetId, sentAt])
+  @@index([communicationType, sentAt])
 }
 
 model Session {
@@ -151,4 +169,10 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   DISABLED
+}
+
+enum CommunicationType {
+  FIRST_REQUEST
+  SECOND_REQUEST
+  FINAL_NOTICE
 }
