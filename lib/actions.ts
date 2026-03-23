@@ -24,8 +24,6 @@ const loginSchema = z.object({
 const matterSchema = z.object({
   referenceNumber: z.string().min(1),
   clientName: z.string().min(1),
-  deponentName: z.string().min(1),
-  deponentRole: z.string().optional(),
   counselName: z.string().min(1),
   counselEmail: z.string().email(),
   notes: z.string().optional(),
@@ -444,8 +442,6 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
   const parsed = matterSchema.safeParse({
     referenceNumber: formData.get("referenceNumber"),
     clientName: formData.get("clientName"),
-    deponentName: formData.get("deponentName"),
-    deponentRole: formData.get("deponentRole") || undefined,
     counselName: formData.get("counselName"),
     counselEmail: formData.get("counselEmail"),
     notes: formData.get("notes") || undefined,
@@ -453,6 +449,18 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
 
   if (!parsed.success) {
     return { error: "Please complete all required matter fields." };
+  }
+
+  const deponentNames = formData
+    .getAll("deponentName")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  const deponentRoles = formData
+    .getAll("deponentRole")
+    .map((value) => String(value).trim());
+
+  if (deponentNames.length === 0) {
+    return { error: "Add at least one deponent before saving the matter." };
   }
 
   await prisma.matter.upsert({
@@ -467,12 +475,12 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
         },
       },
       depositions: {
-        create: {
-          fullName: parsed.data.deponentName,
-          roleTitle: parsed.data.deponentRole,
+        create: deponentNames.map((deponentName, index) => ({
+          fullName: deponentName,
+          roleTitle: deponentRoles[index] || undefined,
           status: "NEEDS_REQUEST",
           followUpStage: "FIRST_EMAIL_PENDING",
-        },
+        })),
       },
     },
     create: {
@@ -487,12 +495,12 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
         },
       },
       depositions: {
-        create: {
-          fullName: parsed.data.deponentName,
-          roleTitle: parsed.data.deponentRole,
+        create: deponentNames.map((deponentName, index) => ({
+          fullName: deponentName,
+          roleTitle: deponentRoles[index] || undefined,
           status: "NEEDS_REQUEST",
           followUpStage: "FIRST_EMAIL_PENDING",
-        },
+        })),
       },
     },
   });

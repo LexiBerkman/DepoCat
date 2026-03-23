@@ -1,5 +1,7 @@
 "use client";
 
+import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useActionState } from "react";
 
 import { createMatterAction } from "@/lib/actions";
@@ -10,6 +12,7 @@ const initialState = {
 
 export function MatterForm() {
   const [state, formAction, pending] = useActionState(createMatterAction, initialState);
+  const [deponents, setDeponents] = useState([{ id: crypto.randomUUID() }]);
 
   return (
     <form action={formAction} className="stack">
@@ -23,14 +26,6 @@ export function MatterForm() {
           <input className="field" name="clientName" placeholder="Jane Smith" required />
         </label>
         <label className="label">
-          Deponent
-          <input className="field" name="deponentName" placeholder="Corporate representative" required />
-        </label>
-        <label className="label">
-          Deponent role
-          <input className="field" name="deponentRole" placeholder="Treating physician" />
-        </label>
-        <label className="label">
           Opposing counsel
           <input className="field" name="counselName" placeholder="Alex Morgan" required />
         </label>
@@ -38,6 +33,53 @@ export function MatterForm() {
           Counsel email
           <input className="field" name="counselEmail" type="email" placeholder="alex@firm.com" required />
         </label>
+      </div>
+      <div className="stack">
+        <div className="row">
+          <div>
+            <h3 className="section-title intake-subtitle">Deponents</h3>
+            <p className="muted small">Add each person you want to depose for this matter.</p>
+          </div>
+          <button
+            className="button-secondary small-button"
+            type="button"
+            onClick={() => setDeponents((current) => [...current, { id: crypto.randomUUID() }])}
+          >
+            <Plus size={14} />
+            Add another deponent
+          </button>
+        </div>
+        <div className="stack">
+          {deponents.map((deponent, index) => (
+            <div key={deponent.id} className="deponent-card">
+              <div className="row">
+                <strong>Deponent {index + 1}</strong>
+                {deponents.length > 1 ? (
+                  <button
+                    className="button-secondary small-button"
+                    type="button"
+                    onClick={() =>
+                      setDeponents((current) => current.filter((entry) => entry.id !== deponent.id))
+                    }
+                  >
+                    <Trash2 size={14} />
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <div className="form-grid">
+                <label className="label">
+                  Deponent
+                  <input className="field" name="deponentName" placeholder="Corporate representative" required />
+                </label>
+                <label className="label">
+                  Deponent role
+                  <input className="field" name="deponentRole" placeholder="Treating physician" />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="form-grid-wide">
         <label className="label">

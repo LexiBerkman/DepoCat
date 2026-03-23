@@ -426,6 +426,21 @@ th {
   border-color: rgba(162, 61, 61, 0.2);
 }
 
+.deponent-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.intake-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
