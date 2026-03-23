@@ -5,6 +5,7 @@ import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
 import { LogEmailForm } from "@/components/log-email-form";
 import { MatterForm } from "@/components/matter-form";
+import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -169,7 +170,6 @@ export default async function HomePage() {
               <th>Reference</th>
               <th>Client</th>
               <th>Deponent</th>
-              <th>Requested</th>
               <th>Scheduled</th>
               <th>Next step</th>
               <th>Last email</th>
@@ -193,8 +193,12 @@ export default async function HomePage() {
                       <div>{deposition.fullName}</div>
                       <div className="muted small">{deposition.roleTitle || "No role noted"}</div>
                     </td>
-                    <td>{formatDate(deposition.requestedDate)}</td>
-                    <td>{formatDate(deposition.scheduledDate)}</td>
+                    <td>
+                      <ScheduledDateForm
+                        depositionTargetId={deposition.id}
+                        scheduledDate={deposition.scheduledDate}
+                      />
+                    </td>
                     <td>
                       <div className={`pill ${followUp.className}`}>{followUp.label}</div>
                       <div className="muted small">Due {formatDate(deposition.followUpDueDate)}</div>

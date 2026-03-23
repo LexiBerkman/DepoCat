@@ -50,6 +50,11 @@ const communicationSchema = z.object({
   communicationType: z.enum(["FIRST_REQUEST", "SECOND_REQUEST", "FINAL_NOTICE"]),
 });
 
+const scheduledDateSchema = z.object({
+  depositionTargetId: z.string().min(1),
+  scheduledDate: z.string().optional(),
+});
+
 export async function loginAction(_: { error: string }, formData: FormData) {
   const { ipAddress, userAgent } = await getRequestContext();
   const parsed = loginSchema.safeParse({
@@ -441,6 +446,78 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
 
   revalidatePath("/");
   return { error: "" };
+}
+
+export async function updateScheduledDateAction(
+  _: { error: string; success: string },
+  formData: FormData,
+) {
+  const session = await requireSession();
+  const parsed = scheduledDateSchema.safeParse({
+    depositionTargetId: formData.get("depositionTargetId"),
+    scheduledDate: formData.get("scheduledDate") || "",
+  });
+
+  if (!parsed.success) {
+    return { error: "Enter a valid scheduled date.", success: "" };
+  }
+
+  const deposition = await prisma.depositionTarget.findUnique({
+    where: { id: parsed.data.depositionTargetId },
+    include: {
+      communications: {
+        orderBy: { sentAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!deposition) {
+    return { error: "That deponent record could not be found.", success: "" };
+  }
+
+  const scheduledDate = parsed.data.scheduledDate
+    ? new Date(`${parsed.data.scheduledDate}T12:00:00`)
+    : null;
+
+  if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+    return { error: "Enter a valid scheduled date.", success: "" };
+  }
+
+  const hasRequestedHistory = Boolean(deposition.requestedDate || deposition.lastContactedAt || deposition.communications[0]);
+
+  await prisma.depositionTarget.update({
+    where: { id: deposition.id },
+    data: scheduledDate
+      ? {
+          scheduledDate,
+          status: "SCHEDULED",
+          followUpStage: "SCHEDULED",
+          followUpDueDate: null,
+        }
+      : {
+          scheduledDate: null,
+          status: hasRequestedHistory ? "REQUESTED" : "NEEDS_REQUEST",
+          followUpStage: hasRequestedHistory ? "AWAITING_RESPONSE" : "FIRST_EMAIL_PENDING",
+          followUpDueDate: null,
+        },
+  });
+
+  await logAudit({
+    userId: session.userId,
+    action: "UPDATE_SCHEDULED_DATE",
+    entityType: "DepositionTarget",
+    entityId: deposition.id,
+    metadata: {
+      scheduledDate: scheduledDate ? scheduledDate.toISOString() : "cleared",
+    },
+  });
+
+  revalidatePath("/");
+  return {
+    error: "",
+    success: scheduledDate ? "Scheduled date saved." : "Scheduled date cleared.",
+  };
 }
 
 export async function importWorkbookAction(

@@ -372,6 +372,11 @@ th {
   word-break: break-word;
 }
 
+.scheduled-form {
+  gap: 0.45rem;
+  min-width: 12rem;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
