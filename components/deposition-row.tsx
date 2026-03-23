@@ -107,18 +107,20 @@ export function DepositionRow({
         />
       </td>
       <td>
-        <div className="small">
-          {currentLastSentAt ? format(currentLastSentAt, "MMM d, yyyy h:mm a") : "Not logged"}
-        </div>
-        <div className="muted small">
-          {currentLastCommunication
-            ? currentLastCommunication.communicationType === "FIRST_REQUEST"
-              ? "1st email"
-              : currentLastCommunication.communicationType === "SECOND_REQUEST"
-                ? "2nd email"
-                : "Final email"
-            : "No communication logged"}
-        </div>
+        {currentLastCommunication ? (
+          <>
+            <div className="small">{format(currentLastSentAt!, "MMM d, yyyy h:mm a")}</div>
+            <div className="muted small">
+              {currentLastCommunication.communicationType === "FIRST_REQUEST"
+                ? "1st email"
+                : currentLastCommunication.communicationType === "SECOND_REQUEST"
+                  ? "2nd email"
+                  : "Final email"}
+            </div>
+          </>
+        ) : (
+          <div className="muted small">No communication logged</div>
+        )}
       </td>
       <td>
         <div className="stack">
