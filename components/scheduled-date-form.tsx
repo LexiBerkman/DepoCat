@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useActionState } from "react";
 
 import { updateScheduledDateAction } from "@/lib/actions";
@@ -14,7 +15,7 @@ function toInputValue(date: Date | null) {
     return "";
   }
 
-  return new Date(date).toISOString().slice(0, 10);
+  return format(new Date(date), "dd/MM/yyyy");
 }
 
 export function ScheduledDateForm({
@@ -31,8 +32,10 @@ export function ScheduledDateForm({
       <input type="hidden" name="depositionTargetId" value={depositionTargetId} />
       <input
         className="field"
-        type="date"
+        type="text"
         name="scheduledDate"
+        inputMode="numeric"
+        placeholder="dd/mm/yyyy"
         defaultValue={toInputValue(scheduledDate)}
       />
       <div className="row-wrap">

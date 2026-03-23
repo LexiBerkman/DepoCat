@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { CommunicationType, FollowUpStage } from "@prisma/client";
 import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
@@ -54,6 +55,66 @@ const scheduledDateSchema = z.object({
   depositionTargetId: z.string().min(1),
   scheduledDate: z.string().optional(),
 });
+
+function parseScheduledDateInput(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const dayFirstMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (dayFirstMatch) {
+    const [, day, month, year] = dayFirstMatch;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
+function getFollowUpStateFromHistory(lastCommunicationType?: CommunicationType | null): {
+  status: "NEEDS_REQUEST" | "REQUESTED";
+  followUpStage: FollowUpStage;
+  followUpDueDate: Date | null;
+} {
+  if (lastCommunicationType === "FINAL_NOTICE") {
+    return {
+      status: "REQUESTED",
+      followUpStage: "AWAITING_RESPONSE",
+      followUpDueDate: null,
+    };
+  }
+
+  if (lastCommunicationType === "SECOND_REQUEST") {
+    return {
+      status: "REQUESTED",
+      followUpStage: "FINAL_NOTICE_PENDING",
+      followUpDueDate: addDays(new Date(), 3),
+    };
+  }
+
+  if (lastCommunicationType === "FIRST_REQUEST") {
+    return {
+      status: "REQUESTED",
+      followUpStage: "SECOND_EMAIL_PENDING",
+      followUpDueDate: addDays(new Date(), 3),
+    };
+  }
+
+  return {
+    status: "NEEDS_REQUEST",
+    followUpStage: "FIRST_EMAIL_PENDING",
+    followUpDueDate: null,
+  };
+}
 
 export async function loginAction(_: { error: string }, formData: FormData) {
   const { ipAddress, userAgent } = await getRequestContext();
@@ -386,8 +447,6 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
     return { error: "Please complete all required matter fields." };
   }
 
-  const now = new Date();
-
   await prisma.matter.upsert({
     where: { referenceNumber: parsed.data.referenceNumber },
     update: {
@@ -403,11 +462,8 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
         create: {
           fullName: parsed.data.deponentName,
           roleTitle: parsed.data.deponentRole,
-          requestedDate: now,
-          status: "REQUESTED",
-          followUpStage: "SECOND_EMAIL_PENDING",
-          followUpDueDate: addDays(now, 3),
-          lastContactedAt: now,
+          status: "NEEDS_REQUEST",
+          followUpStage: "FIRST_EMAIL_PENDING",
         },
       },
     },
@@ -426,11 +482,8 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
         create: {
           fullName: parsed.data.deponentName,
           roleTitle: parsed.data.deponentRole,
-          requestedDate: now,
-          status: "REQUESTED",
-          followUpStage: "SECOND_EMAIL_PENDING",
-          followUpDueDate: addDays(now, 3),
-          lastContactedAt: now,
+          status: "NEEDS_REQUEST",
+          followUpStage: "FIRST_EMAIL_PENDING",
         },
       },
     },
@@ -476,15 +529,14 @@ export async function updateScheduledDateAction(
     return { error: "That deponent record could not be found.", success: "" };
   }
 
-  const scheduledDate = parsed.data.scheduledDate
-    ? new Date(`${parsed.data.scheduledDate}T12:00:00`)
-    : null;
+  const scheduledDate = parseScheduledDateInput(parsed.data.scheduledDate ?? "");
 
-  if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+  if ((parsed.data.scheduledDate ?? "").trim() && !scheduledDate) {
     return { error: "Enter a valid scheduled date.", success: "" };
   }
 
-  const hasRequestedHistory = Boolean(deposition.requestedDate || deposition.lastContactedAt || deposition.communications[0]);
+  const lastCommunication = deposition.communications[0];
+  const followUpState = getFollowUpStateFromHistory(lastCommunication?.communicationType);
 
   await prisma.depositionTarget.update({
     where: { id: deposition.id },
@@ -497,9 +549,9 @@ export async function updateScheduledDateAction(
         }
       : {
           scheduledDate: null,
-          status: hasRequestedHistory ? "REQUESTED" : "NEEDS_REQUEST",
-          followUpStage: hasRequestedHistory ? "AWAITING_RESPONSE" : "FIRST_EMAIL_PENDING",
-          followUpDueDate: null,
+          status: followUpState.status,
+          followUpStage: followUpState.followUpStage,
+          followUpDueDate: followUpState.followUpDueDate,
         },
   });
 

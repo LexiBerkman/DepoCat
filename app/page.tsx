@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import type { CommunicationType } from "@prisma/client";
 import { CalendarClock, Cat, PawPrint } from "lucide-react";
 
 import { CounselActions } from "@/components/counsel-actions";
@@ -30,16 +31,28 @@ function getFollowUpLabel(stage: string) {
   }
 }
 
-function getDefaultEmailTemplate(stage: string): EmailTemplateKey {
-  switch (stage) {
-    case "SECOND_EMAIL_PENDING":
+function getDraftEmailTemplate(stage: string, lastCommunicationType?: CommunicationType): EmailTemplateKey {
+  if (!lastCommunicationType) {
+    if (stage === "SECOND_EMAIL_PENDING") {
       return "SECOND";
-    case "FINAL_NOTICE_PENDING":
-    case "AWAITING_RESPONSE":
+    }
+
+    if (stage === "FINAL_NOTICE_PENDING") {
       return "FINAL";
-    default:
-      return "FIRST";
+    }
+
+    return "FIRST";
   }
+
+  if (lastCommunicationType === "FIRST_REQUEST") {
+    return "SECOND";
+  }
+
+  if (lastCommunicationType === "SECOND_REQUEST" || lastCommunicationType === "FINAL_NOTICE") {
+    return "FINAL";
+  }
+
+  return "FIRST";
 }
 
 export default async function HomePage() {
@@ -238,7 +251,10 @@ export default async function HomePage() {
                           emails={counselEmails}
                           deponentName={deposition.fullName}
                           referenceNumber={matter.referenceNumber}
-                          draftTemplate={getDefaultEmailTemplate(deposition.followUpStage)}
+                          draftTemplate={getDraftEmailTemplate(
+                            deposition.followUpStage,
+                            lastCommunication?.communicationType,
+                          )}
                           lastSentDateLabel={lastSentDateLabel}
                         />
                         <div className="small muted">
