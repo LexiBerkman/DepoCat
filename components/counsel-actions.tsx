@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { buildEmailDraft, type EmailTemplateKey } from "@/lib/email-templates";
 
@@ -20,6 +20,22 @@ export function CounselActions({
 }) {
   const [copiedItem, setCopiedItem] = useState<"emails" | "draft" | null>(null);
   const [copyError, setCopyError] = useState("");
+  const [assistLabel, setAssistLabel] = useState("");
+  const [assistText, setAssistText] = useState("");
+  const emailFieldRef = useRef<HTMLInputElement>(null);
+  const assistFieldRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!assistText) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      assistFieldRef.current?.focus();
+      assistFieldRef.current?.select();
+      assistFieldRef.current?.setSelectionRange(0, assistFieldRef.current.value.length);
+    });
+  }, [assistText]);
 
   function copyTextWithFallback(value: string) {
     const textArea = document.createElement("textarea");
@@ -52,6 +68,9 @@ export function CounselActions({
     }
 
     const emailList = emails.join("; ");
+    emailFieldRef.current?.focus();
+    emailFieldRef.current?.select();
+    emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
 
     try {
       const copiedToClipboard = await copyText(emailList);
@@ -61,18 +80,15 @@ export function CounselActions({
       }
 
       setCopyError("");
+      setAssistLabel("");
+      setAssistText("");
       setCopiedItem("emails");
       window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
-      const copiedToClipboard = copyTextWithFallback(emailList);
-
-      if (copiedToClipboard) {
-        setCopyError("");
-        setCopiedItem("emails");
-        window.setTimeout(() => setCopiedItem(null), 1500);
-      } else {
-        setCopyError("Copy did not complete. Please highlight the emails and copy them manually.");
-      }
+      setCopiedItem(null);
+      setCopyError("Copy did not complete automatically. The emails are selected below and ready to copy.");
+      setAssistLabel("Emails ready to copy");
+      setAssistText(emailList);
     }
   }
 
@@ -92,18 +108,15 @@ export function CounselActions({
       }
 
       setCopyError("");
+      setAssistLabel("");
+      setAssistText("");
       setCopiedItem("draft");
       window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
-      const copiedToClipboard = copyTextWithFallback(draft);
-
-      if (copiedToClipboard) {
-        setCopyError("");
-        setCopiedItem("draft");
-        window.setTimeout(() => setCopiedItem(null), 1500);
-      } else {
-        setCopyError("Draft copy did not complete. Please try again.");
-      }
+      setCopiedItem(null);
+      setCopyError("Draft copy did not complete automatically. The draft is ready below for Ctrl/Cmd+C.");
+      setAssistLabel("Draft ready to copy");
+      setAssistText(draft);
     }
   }
 
@@ -114,6 +127,7 @@ export function CounselActions({
         {copiedItem === "emails" ? "Copied emails" : "Copy emails"}
       </button>
       <input
+        ref={emailFieldRef}
         className="field counsel-email-field"
         type="text"
         value={emails.length ? emails.join("; ") : "No counsel emails saved"}
@@ -122,6 +136,18 @@ export function CounselActions({
       <button className="button-secondary small-button" type="button" onClick={copyDraft}>
         {copiedItem === "draft" ? "Copied draft" : "Draft email"}
       </button>
+      {assistText ? (
+        <label className="label">
+          {assistLabel}
+          <textarea
+            ref={assistFieldRef}
+            className="field counsel-assist-field"
+            value={assistText}
+            readOnly
+            rows={assistLabel === "Emails ready to copy" ? 2 : 8}
+          />
+        </label>
+      ) : null}
       {copyError ? <span className="error small">{copyError}</span> : null}
     </div>
   );
