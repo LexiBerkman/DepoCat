@@ -91,7 +91,7 @@ export default async function HomePage() {
             </p>
             <div className="cat-note">
               <PawPrint size={16} />
-              Built for the practical work of herding schedules, dates, and counsel cats.
+              Built for the practical work of herding cats.
             </div>
             <div className="row-wrap">
               <a className="button" href="#matter-form">
