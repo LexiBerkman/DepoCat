@@ -301,9 +301,21 @@ textarea {
   overflow-x: auto;
 }
 
-table {
+.tracker-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.tracker-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.tracker-table-body {
+  margin-top: -1px;
 }
 
 th,
@@ -315,9 +327,6 @@ td {
 }
 
 th {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   background: var(--card-strong);
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -325,6 +334,14 @@ th {
   color: var(--muted);
   box-shadow: inset 0 -1px 0 var(--line);
 }
+
+.col-reference { width: 10%; }
+.col-client { width: 14%; }
+.col-deponent { width: 15%; }
+.col-scheduled { width: 14%; }
+.col-next { width: 16%; }
+.col-last-email { width: 14%; }
+.col-counsel { width: 17%; }
 
 .pill {
   display: inline-flex;

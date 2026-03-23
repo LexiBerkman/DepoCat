@@ -133,7 +133,16 @@ export default async function HomePage() {
         </div>
         </div>
         <div className="table-scroll">
-          <table>
+          <table className="tracker-table tracker-table-head">
+            <colgroup>
+              <col className="col-reference" />
+              <col className="col-client" />
+              <col className="col-deponent" />
+              <col className="col-scheduled" />
+              <col className="col-next" />
+              <col className="col-last-email" />
+              <col className="col-counsel" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Reference</th>
@@ -145,6 +154,17 @@ export default async function HomePage() {
                 <th>Opposing counsel</th>
               </tr>
             </thead>
+          </table>
+          <table className="tracker-table tracker-table-body">
+            <colgroup>
+              <col className="col-reference" />
+              <col className="col-client" />
+              <col className="col-deponent" />
+              <col className="col-scheduled" />
+              <col className="col-next" />
+              <col className="col-last-email" />
+              <col className="col-counsel" />
+            </colgroup>
             <tbody>
               {matters.flatMap((matter) =>
                 matter.depositions.map((deposition) => {
