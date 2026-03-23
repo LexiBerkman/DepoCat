@@ -429,8 +429,17 @@ th {
 }
 
 .scheduled-form {
+  width: 100%;
   gap: 0.45rem;
-  min-width: 12rem;
+  min-width: 0;
+}
+
+.scheduled-form .field {
+  min-width: 0;
+}
+
+.scheduled-form .row-wrap {
+  align-items: flex-start;
 }
 
 .delete-deponent-form {
