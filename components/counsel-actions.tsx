@@ -1,13 +1,11 @@
 "use client";
 
-import { Mail, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function CounselActions({
-  outlookUrl,
   emails,
 }: {
-  outlookUrl: string;
   emails: string[];
 }) {
   const [copied, setCopied] = useState(false);
@@ -62,26 +60,12 @@ export function CounselActions({
     }
   }
 
-  function openOutlook() {
-    if (!emails.length) {
-      return;
-    }
-
-    window.open(outlookUrl, "_blank", "noopener,noreferrer");
-  }
-
   return (
     <div className="stack">
-      <div className="row-wrap">
-        <button className="link-chip" type="button" onClick={openOutlook} disabled={emails.length === 0}>
-          <Mail size={16} />
-          Open in Outlook
-        </button>
-        <button className="link-chip" type="button" onClick={copyEmails} disabled={emails.length === 0}>
-          <Copy size={16} />
-          {copied ? "Copied emails" : "Copy emails"}
-        </button>
-      </div>
+      <button className="link-chip" type="button" onClick={copyEmails} disabled={emails.length === 0}>
+        <Copy size={16} />
+        {copied ? "Copied emails" : "Copy emails"}
+      </button>
       <input
         ref={emailFieldRef}
         className="field counsel-email-field"

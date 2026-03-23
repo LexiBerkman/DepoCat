@@ -9,7 +9,6 @@ import { TopNav } from "@/components/top-nav";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { securityChecklist } from "@/lib/security";
-import { buildOutlookComposeUrl } from "@/lib/utils";
 
 function formatDate(value: Date | null) {
   return value ? format(value, "MMM d, yyyy") : "Not set";
@@ -183,16 +182,6 @@ export default async function HomePage() {
                 const counselEmails = matter.opposingCounsel.map((counsel) => counsel.email);
                 const followUp = getFollowUpLabel(deposition.followUpStage);
                 const lastCommunication = deposition.communications[0];
-                const outlookUrl = buildOutlookComposeUrl({
-                  to: counselEmails,
-                  subject: `Deposition scheduling request - ${matter.referenceNumber}`,
-                  body: [
-                    `Matter: ${matter.referenceNumber} / ${matter.clientName}`,
-                    `Deponent: ${deposition.fullName}`,
-                    "",
-                    "Please provide your availability for this deposition.",
-                  ].join("\n"),
-                });
 
                 return (
                   <tr key={deposition.id}>
@@ -236,7 +225,7 @@ export default async function HomePage() {
                     </td>
                     <td>
                       <div className="stack">
-                        <CounselActions outlookUrl={outlookUrl} emails={counselEmails} />
+                        <CounselActions emails={counselEmails} />
                         <div className="small muted">
                           {matter.opposingCounsel
                             .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
