@@ -16,7 +16,7 @@ function formatDate(value: Date | null) {
 function getFollowUpLabel(stage: string) {
   switch (stage) {
     case "FIRST_EMAIL_PENDING":
-      return { label: "1st email", className: "pill-neutral" };
+      return { label: "Schedule", className: "pill-neutral" };
     case "SECOND_EMAIL_PENDING":
       return { label: "2nd email due", className: "pill-warning" };
     case "FINAL_NOTICE_PENDING":

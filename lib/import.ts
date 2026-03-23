@@ -76,6 +76,10 @@ function excelSerialToIsoDate(serialText: string) {
     return serialText;
   }
 
+  if (serial <= 1) {
+    return "";
+  }
+
   const utcDays = Math.floor(serial - 25569);
   const utcValue = utcDays * 86400;
   const dateInfo = new Date(utcValue * 1000);
@@ -248,7 +252,15 @@ export function maybeDate(value?: string) {
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date;
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  if (date.getUTCFullYear() < 1901) {
+    return undefined;
+  }
+
+  return date;
 }
 
 export function splitMultiValue(value?: string) {

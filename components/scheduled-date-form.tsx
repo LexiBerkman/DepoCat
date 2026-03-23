@@ -18,7 +18,7 @@ function toInputValue(date: Date | null) {
     return "";
   }
 
-  return format(new Date(date), "dd/MM/yyyy");
+  return format(new Date(date), "MM/dd/yyyy");
 }
 
 export function ScheduledDateForm({
@@ -57,7 +57,7 @@ export function ScheduledDateForm({
         type="text"
         name="scheduledDate"
         inputMode="numeric"
-        placeholder="dd/mm/yyyy"
+        placeholder="mm/dd/yyyy"
         defaultValue={toInputValue(scheduledDate)}
       />
       <div className="row-wrap">
