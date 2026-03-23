@@ -132,8 +132,10 @@ async function parseXlsx(buffer: Buffer) {
 
     for (const match of cellMatches) {
       const cellRef = match[2] || match[6];
+      const beforeAttrs = match[1] || match[5] || "";
+      const afterAttrs = match[3] || match[7] || "";
       const cellInner = match[4] ?? "";
-      const cellXml = `<c r="${cellRef}">${cellInner}</c>`;
+      const cellXml = `<c ${beforeAttrs} r="${cellRef}" ${afterAttrs}>${cellInner}</c>`;
       values[columnLetters(cellRef)] = extractCellValue(cellXml);
     }
 
