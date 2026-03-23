@@ -9,18 +9,18 @@ export function CounselActions({
   emails,
   deponentName,
   referenceNumber,
-  defaultTemplate,
+  draftTemplate,
+  lastSentDateLabel,
 }: {
   emails: string[];
   deponentName: string;
   referenceNumber: string;
-  defaultTemplate: EmailTemplateKey;
+  draftTemplate: EmailTemplateKey;
+  lastSentDateLabel?: string | null;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [copiedItem, setCopiedItem] = useState<"emails" | "draft" | null>(null);
   const [copyError, setCopyError] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplateKey>(defaultTemplate);
   const emailFieldRef = useRef<HTMLInputElement>(null);
-  const draftFieldRef = useRef<HTMLTextAreaElement>(null);
 
   function selectEmails() {
     emailFieldRef.current?.focus();
@@ -30,17 +30,6 @@ export function CounselActions({
 
   function copyWithFallback() {
     selectEmails();
-    return document.execCommand("copy");
-  }
-
-  function selectDraft() {
-    draftFieldRef.current?.focus();
-    draftFieldRef.current?.select();
-    draftFieldRef.current?.setSelectionRange(0, draftFieldRef.current.value.length);
-  }
-
-  function copyDraftWithFallback() {
-    selectDraft();
     return document.execCommand("copy");
   }
 
@@ -65,69 +54,50 @@ export function CounselActions({
         }
       }
 
-      setCopied(true);
       setCopyError("");
-      window.setTimeout(() => setCopied(false), 1500);
+      setCopiedItem("emails");
+      window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
       const copiedToClipboard = copyWithFallback();
 
       if (copiedToClipboard) {
-        setCopied(true);
         setCopyError("");
-        window.setTimeout(() => setCopied(false), 1500);
+        setCopiedItem("emails");
+        window.setTimeout(() => setCopiedItem(null), 1500);
       } else {
         setCopyError("Copy did not complete. Please highlight the emails and copy them manually.");
       }
     }
   }
 
-  async function copyDraft(template: EmailTemplateKey) {
+  async function copyDraft() {
     const draft = buildEmailDraft({
-      template,
+      template: draftTemplate,
       deponentName,
       referenceNumber,
+      lastSentDateLabel,
     });
-
-    setSelectedTemplate(template);
 
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(draft);
       } else {
-        const copiedToClipboard = copyDraftWithFallback();
-
-        if (!copiedToClipboard) {
-          throw new Error("Copy failed");
-        }
+        throw new Error("Clipboard API unavailable");
       }
 
-      setCopied(true);
       setCopyError("");
-      window.setTimeout(() => setCopied(false), 1500);
+      setCopiedItem("draft");
+      window.setTimeout(() => setCopiedItem(null), 1500);
     } catch {
-      const copiedToClipboard = copyDraftWithFallback();
-
-      if (copiedToClipboard) {
-        setCopied(true);
-        setCopyError("");
-        window.setTimeout(() => setCopied(false), 1500);
-      } else {
-        setCopyError("Copy did not complete. Please highlight the draft and copy it manually.");
-      }
+      setCopyError("Draft copy did not complete. Please try again.");
     }
   }
-
-  const selectedDraft = buildEmailDraft({
-    template: selectedTemplate,
-    deponentName,
-    referenceNumber,
-  });
 
   return (
     <div className="stack">
       <button className="link-chip" type="button" onClick={copyEmails} disabled={emails.length === 0}>
         <Copy size={16} />
-        {copied ? "Copied" : "Copy emails"}
+        {copiedItem === "emails" ? "Copied emails" : "Copy emails"}
       </button>
       <input
         ref={emailFieldRef}
@@ -137,25 +107,9 @@ export function CounselActions({
         readOnly
         onFocus={selectEmails}
       />
-      <div className="row-wrap">
-        <button className="button-secondary small-button" type="button" onClick={() => copyDraft("FIRST")}>
-          Copy 1st email
-        </button>
-        <button className="button-secondary small-button" type="button" onClick={() => copyDraft("SECOND")}>
-          Copy 2nd email
-        </button>
-        <button className="button-secondary small-button" type="button" onClick={() => copyDraft("FINAL")}>
-          Copy final email
-        </button>
-      </div>
-      <textarea
-        ref={draftFieldRef}
-        className="field counsel-draft-field"
-        value={selectedDraft}
-        readOnly
-        rows={9}
-        onFocus={selectDraft}
-      />
+      <button className="button-secondary small-button" type="button" onClick={copyDraft}>
+        {copiedItem === "draft" ? "Copied draft" : "Draft email"}
+      </button>
       {copyError ? <span className="error small">{copyError}</span> : null}
     </div>
   );

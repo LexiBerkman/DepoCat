@@ -372,12 +372,6 @@ th {
   word-break: break-word;
 }
 
-.counsel-draft-field {
-  width: 100%;
-  resize: vertical;
-  white-space: pre-wrap;
-}
-
 .scheduled-form {
   gap: 0.45rem;
   min-width: 12rem;

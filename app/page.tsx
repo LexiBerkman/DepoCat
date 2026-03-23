@@ -195,6 +195,9 @@ export default async function HomePage() {
                 const counselEmails = matter.opposingCounsel.map((counsel) => counsel.email);
                 const followUp = getFollowUpLabel(deposition.followUpStage);
                 const lastCommunication = deposition.communications[0];
+                const lastSentDateLabel = lastCommunication
+                  ? format(lastCommunication.sentAt, "MMMM d, yyyy")
+                  : null;
 
                 return (
                   <tr key={deposition.id}>
@@ -246,7 +249,8 @@ export default async function HomePage() {
                           emails={counselEmails}
                           deponentName={deposition.fullName}
                           referenceNumber={matter.referenceNumber}
-                          defaultTemplate={getDefaultEmailTemplate(deposition.followUpStage)}
+                          draftTemplate={getDefaultEmailTemplate(deposition.followUpStage)}
+                          lastSentDateLabel={lastSentDateLabel}
                         />
                         <div className="small muted">
                           {matter.opposingCounsel
