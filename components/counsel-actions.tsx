@@ -5,6 +5,36 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { buildEmailDraft, type EmailTemplateKey } from "@/lib/email-templates";
 
+/**
+ * Synchronous clipboard copy via execCommand.
+ *
+ * Must be called directly inside a user-gesture handler (onclick), not inside
+ * a then/await continuation. Returns true when the copy definitely succeeded.
+ *
+ * This is the primary copy path because:
+ *  - It is synchronous — the user-gesture frame is still active.
+ *  - It works over plain HTTP (no HTTPS requirement).
+ *  - It works in every Chrome version.
+ *  - It returns a reliable boolean — we know immediately whether it worked.
+ */
+function execCopy(text: string): boolean {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText =
+      "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch {
+    return false;
+  }
+}
+
 export function CounselActions({
   emails,
   deponentName,
@@ -41,7 +71,7 @@ export function CounselActions({
     [clientName, deponentName, draftTemplate, lastSentDateLabel, referenceNumber],
   );
 
-  // Auto-select the fallback textarea as soon as the modal appears
+  // Auto-select the fallback textarea as soon as the modal opens
   useEffect(() => {
     if (showDraftFallback && fallbackTextareaRef.current) {
       fallbackTextareaRef.current.focus();
@@ -50,36 +80,67 @@ export function CounselActions({
     }
   }, [showDraftFallback]);
 
-  async function copyEmails() {
+  // Synchronous handler — runs inside the click event's user-gesture frame.
+  function copyEmails() {
     if (!emails.length) return;
     setEmailSelectPrompt(false);
 
-    try {
-      // Call writeText directly — do NOT focus/select before this or Chrome
-      // revokes the user-gesture clipboard permission.
-      await navigator.clipboard.writeText(emailList);
+    // Primary path: synchronous execCommand — guaranteed to be in the gesture frame.
+    if (execCopy(emailList)) {
       setCopiedItem("emails");
       setTimeout(() => setCopiedItem(null), 1500);
-    } catch {
-      // Clipboard API unavailable or denied — select the visible field so
-      // the user can immediately press Cmd/Ctrl+C.
-      setEmailSelectPrompt(true);
-      emailFieldRef.current?.focus();
-      emailFieldRef.current?.select();
-      emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
+      return;
     }
+
+    // Secondary path: async clipboard API (HTTPS / modern browsers).
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(emailList)
+        .then(() => {
+          setCopiedItem("emails");
+          setTimeout(() => setCopiedItem(null), 1500);
+        })
+        .catch(() => {
+          setEmailSelectPrompt(true);
+          emailFieldRef.current?.focus();
+          emailFieldRef.current?.select();
+          emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
+        });
+      return;
+    }
+
+    // Last resort: select the visible field so the user can press Cmd/Ctrl+C.
+    setEmailSelectPrompt(true);
+    emailFieldRef.current?.focus();
+    emailFieldRef.current?.select();
+    emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
   }
 
-  async function copyDraft() {
-    try {
-      await navigator.clipboard.writeText(draft);
+  // Synchronous handler — runs inside the click event's user-gesture frame.
+  function copyDraft() {
+    // Primary path: synchronous execCommand.
+    if (execCopy(draft)) {
       setCopiedItem("draft");
       setTimeout(() => setCopiedItem(null), 1500);
-    } catch {
-      // Clipboard API unavailable or denied — show the temporary modal so
-      // the user can select-all and Cmd/Ctrl+C from the pre-selected textarea.
-      setShowDraftFallback(true);
+      return;
     }
+
+    // Secondary path: async clipboard API.
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(draft)
+        .then(() => {
+          setCopiedItem("draft");
+          setTimeout(() => setCopiedItem(null), 1500);
+        })
+        .catch(() => {
+          setShowDraftFallback(true);
+        });
+      return;
+    }
+
+    // Last resort: show the modal with the draft pre-selected.
+    setShowDraftFallback(true);
   }
 
   return (
@@ -147,7 +208,10 @@ export function CounselActions({
               rows={10}
               onClick={() => {
                 fallbackTextareaRef.current?.select();
-                fallbackTextareaRef.current?.setSelectionRange(0, fallbackTextareaRef.current.value.length);
+                fallbackTextareaRef.current?.setSelectionRange(
+                  0,
+                  fallbackTextareaRef.current.value.length,
+                );
               }}
             />
           </div>
