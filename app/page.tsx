@@ -133,28 +133,15 @@ export default async function HomePage() {
         </div>
         </div>
         <div className="table-scroll">
-          <table className="tracker-table tracker-table-head">
-            <colgroup>
-              <col className="col-reference" />
-              <col className="col-client" />
-              <col className="col-deponent" />
-              <col className="col-scheduled" />
-              <col className="col-next" />
-              <col className="col-last-email" />
-              <col className="col-counsel" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Client</th>
-                <th>Deponent</th>
-                <th>Scheduled</th>
-                <th>Next step</th>
-                <th>Last email</th>
-                <th>Opposing counsel</th>
-              </tr>
-            </thead>
-          </table>
+          <div className="tracker-sticky-header" aria-hidden="true">
+            <div>Reference</div>
+            <div>Client</div>
+            <div>Deponent</div>
+            <div>Scheduled</div>
+            <div>Next step</div>
+            <div>Last email</div>
+            <div>Opposing counsel</div>
+          </div>
           <table className="tracker-table tracker-table-body">
             <colgroup>
               <col className="col-reference" />

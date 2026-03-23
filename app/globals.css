@@ -308,10 +308,25 @@ textarea {
   table-layout: fixed;
 }
 
-.tracker-table-head {
+.tracker-sticky-header {
   position: sticky;
   top: 0;
   z-index: 6;
+  display: grid;
+  grid-template-columns: 10% 14% 15% 14% 16% 14% 17%;
+  min-width: 100%;
+  background: var(--card-strong);
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+.tracker-sticky-header > div {
+  padding: 0.95rem 0.8rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .tracker-table-body {
@@ -523,6 +538,8 @@ th {
     align-self: flex-start;
   }
 
+  .tracker-sticky-header > div:nth-child(5),
+  .tracker-sticky-header > div:nth-child(6),
   th:nth-child(5),
   td:nth-child(5),
   th:nth-child(6),
@@ -530,6 +547,7 @@ th {
     display: none;
   }
 
+  .tracker-sticky-header > div:nth-child(7),
   th:nth-child(7),
   td:nth-child(7) {
     display: none;
