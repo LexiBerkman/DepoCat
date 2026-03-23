@@ -8,7 +8,7 @@ export function buildMailto(params: {
     body: params.body,
   });
 
-  return `mailto:${params.to.join(",")}?${query.toString()}`;
+  return `mailto:${params.to.join(";")}?${query.toString()}`;
 }
 
 export function addDays(date: Date, days: number) {

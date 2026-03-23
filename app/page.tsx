@@ -1,7 +1,8 @@
 import { format } from "date-fns";
-import { CalendarClock, Cat, Mail, ShieldCheck } from "lucide-react";
+import { CalendarClock, Cat, ShieldCheck } from "lucide-react";
 
 import { ChangePasswordForm } from "@/components/change-password-form";
+import { CounselActions } from "@/components/counsel-actions";
 import { ImportForm } from "@/components/import-form";
 import { LogoutButton } from "@/components/logout-button";
 import { MatterForm } from "@/components/matter-form";
@@ -327,13 +328,7 @@ export default async function HomePage() {
                     </td>
                     <td>
                       <div className="stack">
-                        <div className="row-wrap">
-                          <a className="link-chip" href={mailto}>
-                            <Mail size={16} />
-                            Open in Outlook
-                          </a>
-                          <span className="link-chip">{counselEmails.join("; ")}</span>
-                        </div>
+                        <CounselActions mailto={mailto} emails={counselEmails} />
                         <div className="small muted">
                           {matter.opposingCounsel
                             .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
