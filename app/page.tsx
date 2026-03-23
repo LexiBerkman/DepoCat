@@ -151,12 +151,13 @@ export default async function HomePage() {
                   const lastCommunication = deposition.communications[0];
 
                   return (
-                    <DepositionRow
-                      key={deposition.id}
-                      referenceNumber={matter.referenceNumber}
-                      clientName={matter.clientName}
-                      depositionTargetId={deposition.id}
-                      deponentName={deposition.fullName}
+                  <DepositionRow
+                    key={deposition.id}
+                    referenceNumber={matter.referenceNumber}
+                    clientName={matter.clientName}
+                    matterId={matter.id}
+                    depositionTargetId={deposition.id}
+                    deponentName={deposition.fullName}
                       roleTitle={deposition.roleTitle}
                       scheduledDate={deposition.scheduledDate}
                       followUpStage={deposition.followUpStage}

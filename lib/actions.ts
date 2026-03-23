@@ -58,6 +58,11 @@ const deleteDeponentSchema = z.object({
   depositionTargetId: z.string().min(1),
 });
 
+const updateCounselEmailsSchema = z.object({
+  matterId: z.string().min(1),
+  counselEmails: z.string().min(1),
+});
+
 function parseScheduledDateInput(value: string) {
   const trimmed = value.trim();
 
@@ -657,6 +662,110 @@ export async function deleteDeponentAction(
   });
 
   return { error: "", success: "Deleted." };
+}
+
+export async function updateCounselEmailsAction(
+  _: { error: string; success: string; counselEmailsValue: string },
+  formData: FormData,
+) {
+  const session = await requireSession();
+  const parsed = updateCounselEmailsSchema.safeParse({
+    matterId: formData.get("matterId"),
+    counselEmails: formData.get("counselEmails"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: "Enter at least one valid attorney email.",
+      success: "",
+      counselEmailsValue: "",
+    };
+  }
+
+  const matter = await prisma.matter.findUnique({
+    where: { id: parsed.data.matterId },
+    include: {
+      opposingCounsel: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+
+  if (!matter) {
+    return {
+      error: "That matter could not be found.",
+      success: "",
+      counselEmailsValue: "",
+    };
+  }
+
+  const emails = parsed.data.counselEmails
+    .split(";")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const emailSchema = z.string().email();
+  const invalidEmail = emails.find((email) => !emailSchema.safeParse(email).success);
+
+  if (emails.length === 0 || invalidEmail) {
+    return {
+      error: "Enter valid email addresses separated by semicolons.",
+      success: "",
+      counselEmailsValue: parsed.data.counselEmails,
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const existingCounsel = matter.opposingCounsel;
+    const sharedCount = Math.min(existingCounsel.length, emails.length);
+
+    for (let index = 0; index < sharedCount; index += 1) {
+      await tx.opposingCounsel.update({
+        where: { id: existingCounsel[index].id },
+        data: { email: emails[index] },
+      });
+    }
+
+    if (emails.length > existingCounsel.length) {
+      for (let index = existingCounsel.length; index < emails.length; index += 1) {
+        await tx.opposingCounsel.create({
+          data: {
+            matterId: matter.id,
+            fullName: `Opposing Counsel ${index + 1}`,
+            email: emails[index],
+          },
+        });
+      }
+    }
+
+    if (existingCounsel.length > emails.length) {
+      const counselToDelete = existingCounsel.slice(emails.length);
+      await tx.opposingCounsel.deleteMany({
+        where: {
+          id: {
+            in: counselToDelete.map((counsel) => counsel.id),
+          },
+        },
+      });
+    }
+  });
+
+  await logAudit({
+    userId: session.userId,
+    action: "UPDATE_COUNSEL_EMAILS",
+    entityType: "Matter",
+    entityId: matter.id,
+    metadata: {
+      referenceNumber: matter.referenceNumber,
+      emailCount: emails.length,
+    },
+  });
+
+  return {
+    error: "",
+    success: "Attorney emails updated.",
+    counselEmailsValue: emails.join("; "),
+  };
 }
 
 export async function importWorkbookAction(

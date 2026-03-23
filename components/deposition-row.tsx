@@ -5,6 +5,7 @@ import type { CommunicationType } from "@prisma/client";
 import { useMemo, useState } from "react";
 
 import { CounselActions } from "@/components/counsel-actions";
+import { CounselEmailEditor } from "@/components/counsel-email-editor";
 import { DeleteDeponentButton } from "@/components/delete-deponent-button";
 import { LogEmailForm } from "@/components/log-email-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
@@ -58,6 +59,7 @@ function getDraftTemplate(lastCommunicationType?: CommunicationType): EmailTempl
 export function DepositionRow({
   referenceNumber,
   clientName,
+  matterId,
   depositionTargetId,
   deponentName,
   roleTitle,
@@ -70,6 +72,7 @@ export function DepositionRow({
 }: {
   referenceNumber: string;
   clientName: string;
+  matterId: string;
   depositionTargetId: string;
   deponentName: string;
   roleTitle: string | null;
@@ -90,6 +93,7 @@ export function DepositionRow({
   const [currentFollowUpStage, setCurrentFollowUpStage] = useState(followUpStage);
   const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
   const [isDeleted, setIsDeleted] = useState(false);
+  const [currentCounselEmails, setCurrentCounselEmails] = useState(counselEmails);
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
   const lastSentDateLabel = normalizedLastSentAt ? format(normalizedLastSentAt, "MMMM d, yyyy") : null;
@@ -153,13 +157,18 @@ export function DepositionRow({
       <td>
         <div className="stack">
           <CounselActions
-            emails={counselEmails}
+            emails={currentCounselEmails}
             deponentName={deponentName}
             clientName={clientName}
             referenceNumber={referenceNumber}
             draftTemplate={getDraftTemplate(lastCommunication?.communicationType)}
             lastSentDateLabel={lastSentDateLabel}
             isScheduled={isScheduled}
+          />
+          <CounselEmailEditor
+            matterId={matterId}
+            counselEmails={currentCounselEmails}
+            onUpdated={setCurrentCounselEmails}
           />
           <div className="small muted">{counselSummary}</div>
           <DeleteDeponentButton

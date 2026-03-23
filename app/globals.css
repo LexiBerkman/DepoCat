@@ -435,6 +435,10 @@ th {
   border-color: rgba(162, 61, 61, 0.2);
 }
 
+.counsel-editor-form {
+  gap: 0.45rem;
+}
+
 .deponent-card {
   display: flex;
   flex-direction: column;
