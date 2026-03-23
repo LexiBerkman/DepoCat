@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { CalendarClock, Cat, Mail, ShieldCheck } from "lucide-react";
 
+import { ChangePasswordForm } from "@/components/change-password-form";
 import { ImportForm } from "@/components/import-form";
 import { LogoutButton } from "@/components/logout-button";
 import { MatterForm } from "@/components/matter-form";
@@ -153,6 +154,54 @@ export default async function HomePage() {
             </p>
           </div>
           <ImportForm />
+        </div>
+      </section>
+
+      <section className="content-grid">
+        <div className="panel stack">
+          <div>
+            <h2 className="section-title">Account security</h2>
+            <p className="muted">
+              Replace the temporary password with a private one you keep in your password manager.
+            </p>
+          </div>
+          <div className="stat-card stack">
+            <div className="small muted">Current sign-in</div>
+            <strong>{session.email}</strong>
+            <div className="muted small">
+              {session.role === "OWNER" ? "Owner access" : "Paralegal access"}
+            </div>
+          </div>
+          <ChangePasswordForm />
+        </div>
+
+        <div className="panel stack">
+          <div>
+            <h2 className="section-title">Security habits</h2>
+            <p className="muted">
+              A few practical steps will make this much safer for daily legal work.
+            </p>
+          </div>
+          <div className="stack">
+            <div className="stat-card">
+              <strong>Use unique passwords</strong>
+              <div className="muted small">
+                Give each DepoCat user a separate password that is not reused anywhere else.
+              </div>
+            </div>
+            <div className="stat-card">
+              <strong>Sign out shared devices</strong>
+              <div className="muted small">
+                Changing a password will revoke the other active sessions for that user.
+              </div>
+            </div>
+            <div className="stat-card">
+              <strong>Next security step</strong>
+              <div className="muted small">
+                We should add MFA next if this is becoming part of real daily case work.
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

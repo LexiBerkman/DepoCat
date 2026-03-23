@@ -301,6 +301,11 @@ th {
   font-size: 0.92rem;
 }
 
+.success {
+  color: #1f6a46;
+  font-size: 0.92rem;
+}
+
 @media (max-width: 980px) {
   .hero-grid,
   .content-grid,

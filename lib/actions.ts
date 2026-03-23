@@ -1,5 +1,6 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -26,6 +27,17 @@ const matterSchema = z.object({
   counselEmail: z.string().email(),
   notes: z.string().optional(),
 });
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(12),
+    newPassword: z.string().min(14),
+    confirmPassword: z.string().min(14),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "The new passwords did not match.",
+    path: ["confirmPassword"],
+  });
 
 export async function loginAction(_: { error: string }, formData: FormData) {
   const { ipAddress, userAgent } = await getRequestContext();
@@ -99,6 +111,91 @@ export async function logoutAction() {
   });
   await destroySession();
   redirect("/login");
+}
+
+export async function changePasswordAction(
+  _: { error: string; success: string },
+  formData: FormData,
+) {
+  const session = await requireSession();
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Enter your current password and a stronger new password.",
+      success: "",
+    };
+  }
+
+  if (parsed.data.currentPassword === parsed.data.newPassword) {
+    return {
+      error: "Choose a new password that is different from the current one.",
+      success: "",
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+  });
+
+  if (!user || user.status !== "ACTIVE") {
+    return {
+      error: "Your account could not be verified. Please sign in again.",
+      success: "",
+    };
+  }
+
+  const currentPasswordMatches = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+  if (!currentPasswordMatches) {
+    await logAudit({
+      userId: session.userId,
+      action: "PASSWORD_CHANGE_FAILED",
+      entityType: "User",
+      entityId: session.userId,
+    });
+    return {
+      error: "The current password you entered was incorrect.",
+      success: "",
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: session.userId },
+      data: { passwordHash },
+    }),
+    prisma.session.updateMany({
+      where: {
+        userId: session.userId,
+        revokedAt: null,
+        tokenId: {
+          not: session.sessionId,
+        },
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    }),
+  ]);
+
+  await logAudit({
+    userId: session.userId,
+    action: "PASSWORD_CHANGED",
+    entityType: "User",
+    entityId: session.userId,
+  });
+
+  revalidatePath("/");
+  return {
+    error: "",
+    success: "Password updated. Other active sessions for this user have been signed out.",
+  };
 }
 
 export async function createMatterAction(_: { error: string }, formData: FormData) {
