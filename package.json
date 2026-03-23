@@ -9,9 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
-    "db:init": "sqlite3 prisma/dev.db < prisma/init.sql",
+    "db:push": "prisma db push",
     "seed:users": "node scripts/seed-users.mjs",
-    "setup": "npm run prisma:generate && npm run db:init && npm run seed:users"
+    "setup": "npm run prisma:generate && npm run db:push && npm run seed:users"
   },
   "keywords": [],
   "author": "",
