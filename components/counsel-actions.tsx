@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Mail } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { buildEmailDraft, type EmailTemplateKey } from "@/lib/email-templates";
 
@@ -54,9 +54,7 @@ export function CounselActions({
 }) {
   const [copiedItem, setCopiedItem] = useState<"emails" | "draft" | null>(null);
   const [emailSelectPrompt, setEmailSelectPrompt] = useState(false);
-  const [showDraftFallback, setShowDraftFallback] = useState(false);
   const emailFieldRef = useRef<HTMLInputElement>(null);
-  const fallbackTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const emailList = useMemo(() => emails.join("; "), [emails]);
   const draft = useMemo(
@@ -71,14 +69,9 @@ export function CounselActions({
     [clientName, deponentName, draftTemplate, lastSentDateLabel, referenceNumber],
   );
 
-  // Auto-select the fallback textarea as soon as the modal opens
-  useEffect(() => {
-    if (showDraftFallback && fallbackTextareaRef.current) {
-      fallbackTextareaRef.current.focus();
-      fallbackTextareaRef.current.select();
-      fallbackTextareaRef.current.setSelectionRange(0, fallbackTextareaRef.current.value.length);
-    }
-  }, [showDraftFallback]);
+  function openCopyPrompt(title: string, text: string) {
+    window.prompt(title, text);
+  }
 
   // Synchronous handler — runs inside the click event's user-gesture frame.
   function copyEmails() {
@@ -105,6 +98,7 @@ export function CounselActions({
           emailFieldRef.current?.focus();
           emailFieldRef.current?.select();
           emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
+          openCopyPrompt("Copy emails", emailList);
         });
       return;
     }
@@ -114,6 +108,7 @@ export function CounselActions({
     emailFieldRef.current?.focus();
     emailFieldRef.current?.select();
     emailFieldRef.current?.setSelectionRange(0, emailFieldRef.current.value.length);
+    openCopyPrompt("Copy emails", emailList);
   }
 
   // Synchronous handler — runs inside the click event's user-gesture frame.
@@ -134,13 +129,13 @@ export function CounselActions({
           setTimeout(() => setCopiedItem(null), 1500);
         })
         .catch(() => {
-          setShowDraftFallback(true);
+          openCopyPrompt("Copy draft email", draft);
         });
       return;
     }
 
-    // Last resort: show the modal with the draft pre-selected.
-    setShowDraftFallback(true);
+    // Last resort: show a native prompt with the draft text.
+    openCopyPrompt("Copy draft email", draft);
   }
 
   return (
@@ -184,39 +179,6 @@ export function CounselActions({
         <span className="small muted">Field selected — press Cmd/Ctrl+C to copy.</span>
       )}
 
-      {showDraftFallback && (
-        <div className="draft-fallback-overlay" role="dialog" aria-modal="true" aria-label="Copy draft email">
-          <div className="draft-fallback-panel">
-            <div className="row">
-              <strong className="small">Copy draft manually</strong>
-              <button
-                className="link-chip small-button"
-                type="button"
-                onClick={() => setShowDraftFallback(false)}
-              >
-                ✕ Close
-              </button>
-            </div>
-            <p className="small muted" style={{ margin: 0 }}>
-              Auto-copy failed. The text below is selected — press Cmd/Ctrl+C, then close.
-            </p>
-            <textarea
-              ref={fallbackTextareaRef}
-              className="field counsel-assist-field"
-              value={draft}
-              readOnly
-              rows={10}
-              onClick={() => {
-                fallbackTextareaRef.current?.select();
-                fallbackTextareaRef.current?.setSelectionRange(
-                  0,
-                  fallbackTextareaRef.current.value.length,
-                );
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
