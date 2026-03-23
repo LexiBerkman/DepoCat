@@ -290,12 +290,15 @@ textarea {
   border-radius: var(--radius-lg);
   padding: 1rem;
   margin-top: 1.5rem;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .table-shell > .row {
   margin-bottom: 0.75rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
 }
 
 table {

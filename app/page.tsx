@@ -127,57 +127,59 @@ export default async function HomePage() {
             <h2 className="section-title">Deposition tracker</h2>
             <p className="muted">Every matter, deponent, deadline, and contact path in one place.</p>
           </div>
-          <div className="tracker-tag">
-            <PawPrint size={16} />
-            Herd the cats
-          </div>
+        <div className="tracker-tag">
+          <PawPrint size={16} />
+          Herd the cats
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Reference</th>
-              <th>Client</th>
-              <th>Deponent</th>
-              <th>Scheduled</th>
-              <th>Next step</th>
-              <th>Last email</th>
-              <th>Opposing counsel</th>
-            </tr>
-          </thead>
-          <tbody>
-            {matters.flatMap((matter) =>
-              matter.depositions.map((deposition) => {
-                const lastCommunication = deposition.communications[0];
+        </div>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Client</th>
+                <th>Deponent</th>
+                <th>Scheduled</th>
+                <th>Next step</th>
+                <th>Last email</th>
+                <th>Opposing counsel</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matters.flatMap((matter) =>
+                matter.depositions.map((deposition) => {
+                  const lastCommunication = deposition.communications[0];
 
-                return (
-                  <DepositionRow
-                    key={deposition.id}
-                    referenceNumber={matter.referenceNumber}
-                    clientName={matter.clientName}
-                    depositionTargetId={deposition.id}
-                    deponentName={deposition.fullName}
-                    roleTitle={deposition.roleTitle}
-                    scheduledDate={deposition.scheduledDate}
-                    followUpStage={deposition.followUpStage}
-                    followUpDueDate={deposition.followUpDueDate}
-                    lastCommunication={
-                      lastCommunication
-                        ? {
-                            sentAt: lastCommunication.sentAt,
-                            communicationType: lastCommunication.communicationType,
-                          }
-                        : undefined
-                    }
-                    counselEmails={matter.opposingCounsel.map((counsel) => counsel.email)}
-                    counselSummary={matter.opposingCounsel
-                      .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
-                      .join(" | ")}
-                  />
-                );
-              }),
-            )}
-          </tbody>
-        </table>
+                  return (
+                    <DepositionRow
+                      key={deposition.id}
+                      referenceNumber={matter.referenceNumber}
+                      clientName={matter.clientName}
+                      depositionTargetId={deposition.id}
+                      deponentName={deposition.fullName}
+                      roleTitle={deposition.roleTitle}
+                      scheduledDate={deposition.scheduledDate}
+                      followUpStage={deposition.followUpStage}
+                      followUpDueDate={deposition.followUpDueDate}
+                      lastCommunication={
+                        lastCommunication
+                          ? {
+                              sentAt: lastCommunication.sentAt,
+                              communicationType: lastCommunication.communicationType,
+                            }
+                          : undefined
+                      }
+                      counselEmails={matter.opposingCounsel.map((counsel) => counsel.email)}
+                      counselSummary={matter.opposingCounsel
+                        .map((counsel) => `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`)
+                        .join(" | ")}
+                    />
+                  );
+                }),
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );
