@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { logAudit } from "@/lib/audit";
 import { authenticateUser, createSession, destroySession, requireOwner, requireSession } from "@/lib/auth";
-import { parseWorkbook, maybeDate } from "@/lib/import";
+import { ImportError, parseWorkbook, maybeDate } from "@/lib/import";
 import { isLoginBlocked, recordLoginAttempt } from "@/lib/login-security";
 import { prisma } from "@/lib/prisma";
 import { getRequestContext } from "@/lib/request-context";
@@ -361,7 +361,7 @@ export async function importWorkbookAction(
   }
 
   try {
-    const rows = await parseWorkbook(Buffer.from(await file.arrayBuffer()));
+    const rows = await parseWorkbook(Buffer.from(await file.arrayBuffer()), file.name);
 
     for (const row of rows) {
       const requestedDate = maybeDate(row.requestedDate);
@@ -452,7 +452,14 @@ export async function importWorkbookAction(
 
     revalidatePath("/");
     return { error: "", success: `Imported ${rows.length} spreadsheet row(s).` };
-  } catch {
+  } catch (error) {
+    if (error instanceof ImportError) {
+      return {
+        error: error.message,
+        success: "",
+      };
+    }
+
     return {
       error: "The workbook could not be imported. Please confirm the columns and email addresses are valid.",
       success: "",

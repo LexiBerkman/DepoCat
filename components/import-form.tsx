@@ -16,11 +16,13 @@ export function ImportForm() {
     <form action={formAction} className="stack">
       <label className="label">
         Upload Excel spreadsheet
-        <input className="file-input" type="file" name="file" accept=".xlsx,.xls,.csv" required />
+        <input className="file-input" type="file" name="file" accept=".xlsx,.csv" required />
       </label>
       <p className="small muted">
-        Expected columns: Reference Number, Client Name, Deponent Name, Deponent Role, Requested
-        Date, Scheduled Date, Counsel Name, Counsel Email, Counsel Firm, Notes.
+        Recommended columns: Reference Number, Client Name, Deponent Name, Deponent Role,
+        Requested Date, Scheduled Date, Counsel Name, Counsel Email, Counsel Firm, Notes.
+        Common variations like `Reference`, `Client`, `Deponent`, `Attorney Name`, and `Attorney Email`
+        are now accepted too. Use `.xlsx` or `.csv`.
       </p>
       {state.error ? <p className="error">{state.error}</p> : null}
       {state.success ? <p>{state.success}</p> : null}
