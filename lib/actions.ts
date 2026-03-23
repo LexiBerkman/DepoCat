@@ -56,6 +56,10 @@ const scheduledDateSchema = z.object({
   scheduledDate: z.string().optional(),
 });
 
+const deleteDeponentSchema = z.object({
+  depositionTargetId: z.string().min(1),
+});
+
 function parseScheduledDateInput(value: string) {
   const trimmed = value.trim();
 
@@ -603,6 +607,48 @@ export async function updateScheduledDateAction(
         ? ""
         : followUpState.followUpDueDate.toISOString(),
   };
+}
+
+export async function deleteDeponentAction(
+  _: { error: string; success: string },
+  formData: FormData,
+) {
+  const session = await requireSession();
+  const parsed = deleteDeponentSchema.safeParse({
+    depositionTargetId: formData.get("depositionTargetId"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Choose a valid deponent to delete.", success: "" };
+  }
+
+  const deposition = await prisma.depositionTarget.findUnique({
+    where: { id: parsed.data.depositionTargetId },
+    include: {
+      matter: true,
+    },
+  });
+
+  if (!deposition) {
+    return { error: "That deponent could not be found.", success: "" };
+  }
+
+  await prisma.depositionTarget.delete({
+    where: { id: deposition.id },
+  });
+
+  await logAudit({
+    userId: session.userId,
+    action: "DELETE_DEPONENT",
+    entityType: "DepositionTarget",
+    entityId: deposition.id,
+    metadata: {
+      deponentName: deposition.fullName,
+      referenceNumber: deposition.matter.referenceNumber,
+    },
+  });
+
+  return { error: "", success: "Deleted." };
 }
 
 export async function importWorkbookAction(

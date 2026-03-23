@@ -5,6 +5,7 @@ import type { CommunicationType } from "@prisma/client";
 import { useMemo, useState } from "react";
 
 import { CounselActions } from "@/components/counsel-actions";
+import { DeleteDeponentButton } from "@/components/delete-deponent-button";
 import { LogEmailForm } from "@/components/log-email-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import { type EmailTemplateKey } from "@/lib/email-templates";
@@ -88,6 +89,7 @@ export function DepositionRow({
   const normalizedLastSentAt = toDate(lastCommunication?.sentAt);
   const [currentFollowUpStage, setCurrentFollowUpStage] = useState(followUpStage);
   const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
+  const [isDeleted, setIsDeleted] = useState(false);
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
   const lastSentDateLabel = normalizedLastSentAt ? format(normalizedLastSentAt, "MMMM d, yyyy") : null;
@@ -95,6 +97,10 @@ export function DepositionRow({
   // A deposition is only truly scheduled if the stored date is a real date
   // (not an Excel zero-date artifact).
   const isScheduled = isValidScheduledDate(normalizedScheduledDate) || currentFollowUpStage === "SCHEDULED";
+
+  if (isDeleted) {
+    return null;
+  }
 
   return (
     <tr>
@@ -156,6 +162,11 @@ export function DepositionRow({
             isScheduled={isScheduled}
           />
           <div className="small muted">{counselSummary}</div>
+          <DeleteDeponentButton
+            depositionTargetId={depositionTargetId}
+            deponentName={deponentName}
+            onDeleted={() => setIsDeleted(true)}
+          />
         </div>
       </td>
     </tr>

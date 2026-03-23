@@ -414,6 +414,18 @@ th {
   min-width: 12rem;
 }
 
+.delete-deponent-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.delete-button {
+  width: fit-content;
+  color: var(--danger);
+  border-color: rgba(162, 61, 61, 0.2);
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
