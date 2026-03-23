@@ -13,6 +13,15 @@ function formatDate(value: Date | null) {
   return value ? format(value, "MMM d, yyyy") : "Not set";
 }
 
+function toDate(value: string | Date | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /** Reject bogus Excel zero-dates (1899-12-30, serial 0) stored in the DB. */
 function isValidScheduledDate(date: Date | null): boolean {
   if (!date) return false;
@@ -63,27 +72,29 @@ export function DepositionRow({
   depositionTargetId: string;
   deponentName: string;
   roleTitle: string | null;
-  scheduledDate: Date | null;
+  scheduledDate: Date | string | null;
   followUpStage: string;
-  followUpDueDate: Date | null;
+  followUpDueDate: Date | string | null;
   lastCommunication:
     | {
-        sentAt: Date;
+        sentAt: Date | string;
         communicationType: CommunicationType;
       }
     | undefined;
   counselEmails: string[];
   counselSummary: string;
 }) {
+  const normalizedScheduledDate = toDate(scheduledDate);
+  const normalizedLastSentAt = toDate(lastCommunication?.sentAt);
   const [currentFollowUpStage, setCurrentFollowUpStage] = useState(followUpStage);
-  const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(followUpDueDate);
+  const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
-  const lastSentDateLabel = lastCommunication ? format(lastCommunication.sentAt, "MMMM d, yyyy") : null;
+  const lastSentDateLabel = normalizedLastSentAt ? format(normalizedLastSentAt, "MMMM d, yyyy") : null;
 
   // A deposition is only truly scheduled if the stored date is a real date
   // (not an Excel zero-date artifact).
-  const isScheduled = isValidScheduledDate(scheduledDate) || currentFollowUpStage === "SCHEDULED";
+  const isScheduled = isValidScheduledDate(normalizedScheduledDate) || currentFollowUpStage === "SCHEDULED";
 
   return (
     <tr>
@@ -98,7 +109,7 @@ export function DepositionRow({
       <td>
         <ScheduledDateForm
           depositionTargetId={depositionTargetId}
-          scheduledDate={scheduledDate}
+          scheduledDate={normalizedScheduledDate}
           onUpdated={({ followUpStage: nextStage, followUpDueDateValue }) => {
             setCurrentFollowUpStage(nextStage);
             setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
@@ -121,7 +132,7 @@ export function DepositionRow({
       </td>
       <td>
         <div className="small">
-          {lastCommunication ? format(lastCommunication.sentAt, "MMM d, yyyy h:mm a") : "Not logged"}
+          {normalizedLastSentAt ? format(normalizedLastSentAt, "MMM d, yyyy h:mm a") : "Not logged"}
         </div>
         <div className="muted small">
           {lastCommunication
