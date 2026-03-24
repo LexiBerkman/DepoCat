@@ -137,7 +137,7 @@ export function MatterForm() {
       <div className="form-grid-wide">
         <label className="label">
           Notes
-          <textarea className="field" name="notes" rows={3} placeholder="Anything your paralegal should see immediately" />
+          <textarea className="field" name="notes" rows={3} placeholder="Leave a quick paw note for this matter" />
         </label>
       </div>
       {state.error ? <p className="error">{state.error}</p> : null}
