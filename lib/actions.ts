@@ -61,6 +61,11 @@ const updateCounselEmailsSchema = z.object({
   counselEmails: z.string().min(1),
 });
 
+const updateDepositionNoteSchema = z.object({
+  depositionTargetId: z.string().min(1),
+  notes: z.string().max(200),
+});
+
 function parseCounselEmailInput(value: string) {
   return value
     .split(/[;\n,]+/)
@@ -782,6 +787,66 @@ export async function updateCounselEmailsAction(
     error: "",
     success: "Attorney emails updated.",
     counselEmailsValue: emails.join("; "),
+  };
+}
+
+export async function updateDepositionNoteAction(input: {
+  depositionTargetId: string;
+  notes: string;
+}) {
+  const session = await requireSession();
+  const parsed = updateDepositionNoteSchema.safeParse({
+    depositionTargetId: input.depositionTargetId,
+    notes: input.notes.trim(),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: "Notes must be 200 characters or fewer.",
+      success: "",
+      notes: input.notes.slice(0, 200),
+    };
+  }
+
+  const deposition = await prisma.depositionTarget.findUnique({
+    where: { id: parsed.data.depositionTargetId },
+    include: {
+      matter: true,
+    },
+  });
+
+  if (!deposition) {
+    return {
+      error: "That deponent record could not be found.",
+      success: "",
+      notes: parsed.data.notes,
+    };
+  }
+
+  await prisma.depositionTarget.update({
+    where: { id: deposition.id },
+    data: {
+      notes: parsed.data.notes || null,
+    },
+  });
+
+  await logAudit({
+    userId: session.userId,
+    action: "UPDATE_DEPONENT_NOTE",
+    entityType: "DepositionTarget",
+    entityId: deposition.id,
+    metadata: {
+      referenceNumber: deposition.matter.referenceNumber,
+      noteLength: parsed.data.notes.length,
+    },
+  });
+
+  revalidatePath("/");
+
+  return {
+    error: "",
+    success: "Saved.",
+    notes: parsed.data.notes,
   };
 }
 

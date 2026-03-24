@@ -30,6 +30,7 @@ model DepositionTarget {
   matterId        String
   fullName        String
   roleTitle       String?
+  notes           String?
   requestedDate   DateTime?
   scheduledDate   DateTime?
   status          DepositionStatus @default(NEEDS_REQUEST)

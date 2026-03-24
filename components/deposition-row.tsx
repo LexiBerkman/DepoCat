@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { CounselActions } from "@/components/counsel-actions";
 import { CounselEmailEditor } from "@/components/counsel-email-editor";
 import { DeleteDeponentButton } from "@/components/delete-deponent-button";
+import { DepositionNoteField } from "@/components/deposition-note-field";
 import { LogEmailForm } from "@/components/log-email-form";
 import { ScheduledDateForm } from "@/components/scheduled-date-form";
 import {
@@ -24,6 +25,7 @@ export function DepositionRow({
   depositionTargetId,
   deponentName,
   roleTitle,
+  notes,
   scheduledDate,
   followUpStage,
   followUpDueDate,
@@ -37,6 +39,7 @@ export function DepositionRow({
   depositionTargetId: string;
   deponentName: string;
   roleTitle: string | null;
+  notes: string | null;
   scheduledDate: Date | string | null;
   followUpStage: string;
   followUpDueDate: Date | string | null;
@@ -77,6 +80,7 @@ export function DepositionRow({
       <td>
         <div>{deponentName}</div>
         <div className="muted small">{roleTitle || "No role noted"}</div>
+        <DepositionNoteField depositionTargetId={depositionTargetId} initialNotes={notes} />
       </td>
       <td>
         <ScheduledDateForm

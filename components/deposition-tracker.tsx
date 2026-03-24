@@ -14,6 +14,7 @@ type TrackerMatter = {
     id: string;
     fullName: string;
     roleTitle: string | null;
+    notes: string | null;
     scheduledDate: Date | null;
     followUpStage: string;
     followUpDueDate: Date | null;
@@ -145,6 +146,7 @@ export function DepositionTracker({ matters }: { matters: TrackerMatter[] }) {
                   depositionTargetId={deposition.id}
                   deponentName={deposition.fullName}
                   roleTitle={deposition.roleTitle}
+                  notes={deposition.notes}
                   scheduledDate={deposition.scheduledDate}
                   followUpStage={deposition.followUpStage}
                   followUpDueDate={deposition.followUpDueDate}

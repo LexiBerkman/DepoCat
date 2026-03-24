@@ -501,6 +501,24 @@ th:nth-child(5) {
   min-width: 8.75rem;
 }
 
+.deposition-note {
+  margin-top: 0.6rem;
+}
+
+.deposition-note-input {
+  min-height: 4.5rem;
+  padding: 0.7rem 0.8rem;
+  resize: none;
+}
+
+.deposition-note-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
 /* Fallback modal — shown only when navigator.clipboard.writeText is denied */
 .draft-fallback-overlay {
   position: fixed;
