@@ -87,7 +87,7 @@ export function DepositionNoteField({
         className="field deposition-note-input"
         value={value}
         maxLength={NOTE_LIMIT}
-        rows={2}
+        rows={3}
         placeholder="Brief note for this deponent..."
         onChange={(event) => {
           setValue(event.target.value.slice(0, NOTE_LIMIT));
