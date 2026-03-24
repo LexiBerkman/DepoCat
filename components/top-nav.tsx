@@ -1,3 +1,4 @@
+import { AutoLogout } from "@/components/auto-logout";
 import Link from "next/link";
 import { Cat, ShieldCheck } from "lucide-react";
 
@@ -14,6 +15,7 @@ export function TopNav({
 }) {
   return (
     <div className="top-nav">
+      <AutoLogout />
       <div className="row-wrap">
         <span className="brand-chip">
           <Cat size={16} />
