@@ -339,6 +339,27 @@ textarea {
   margin-bottom: 0.75rem;
 }
 
+.tracker-search-bar {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.tracker-search-label {
+  min-width: 0;
+}
+
+.tracker-search-input {
+  min-width: 0;
+}
+
+.tracker-search-meta {
+  padding-bottom: 0.85rem;
+  white-space: nowrap;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
@@ -533,6 +554,12 @@ th:nth-child(5) {
   gap: 0.45rem;
 }
 
+.tracker-empty-state {
+  padding: 1rem 0;
+  text-align: center;
+  color: var(--muted);
+}
+
 .security-cat-row {
   display: flex;
   gap: 0.55rem;
@@ -611,6 +638,15 @@ th:nth-child(5) {
   .top-nav {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .tracker-search-bar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .tracker-search-meta {
+    padding-bottom: 0;
   }
 
   .cat-gallery {
