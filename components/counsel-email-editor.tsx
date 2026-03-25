@@ -40,7 +40,7 @@ export function CounselEmailEditor({
   if (!isEditing) {
     return (
       <button
-        className="button-secondary small-button counsel-action-button"
+        className="button-secondary small-button counsel-email-edit-button"
         type="button"
         onClick={() => setIsEditing(true)}
       >

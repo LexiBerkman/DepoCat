@@ -506,6 +506,11 @@ th:nth-child(5) {
   min-width: 8.75rem;
 }
 
+.counsel-email-edit-button {
+  width: fit-content;
+  align-self: flex-start;
+}
+
 .deposition-note {
   margin-top: 0.6rem;
 }
@@ -814,6 +819,12 @@ th:nth-child(5) {
   .counsel-action-button {
     min-width: 0;
     flex: 1 1 11rem;
+  }
+
+  .counsel-email-edit-button {
+    flex: 0 0 auto;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .delete-button {
