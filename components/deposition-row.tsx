@@ -86,26 +86,34 @@ export function DepositionRow({
     />
   );
 
+  const nextStepSummaryContent = (
+    <div className="next-step-summary">
+      <div className={`pill ${followUp.className}`}>{followUp.label}</div>
+      {currentFollowUpDueDate ? (
+        <div className="muted small">Due {format(currentFollowUpDueDate, "MMM d, yyyy")}</div>
+      ) : null}
+    </div>
+  );
+
+  const logEmailContent = (
+    <LogEmailForm
+      depositionTargetId={depositionTargetId}
+      defaultType={getDefaultCommunicationType(currentFollowUpStage)}
+      onLogged={({ communicationType, sentAt, followUpStage: nextStage, followUpDueDateValue }) => {
+        setCurrentLastCommunication({
+          communicationType,
+          sentAt,
+        });
+        setCurrentFollowUpStage(nextStage);
+        setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
+      }}
+    />
+  );
+
   const nextStepContent = (
     <>
-      <div className="next-step-summary">
-        <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-        {currentFollowUpDueDate ? (
-          <div className="muted small">Due {format(currentFollowUpDueDate, "MMM d, yyyy")}</div>
-        ) : null}
-      </div>
-      <LogEmailForm
-        depositionTargetId={depositionTargetId}
-        defaultType={getDefaultCommunicationType(currentFollowUpStage)}
-        onLogged={({ communicationType, sentAt, followUpStage: nextStage, followUpDueDateValue }) => {
-          setCurrentLastCommunication({
-            communicationType,
-            sentAt,
-          });
-          setCurrentFollowUpStage(nextStage);
-          setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
-        }}
-      />
+      {nextStepSummaryContent}
+      {logEmailContent}
     </>
   );
 
@@ -129,19 +137,14 @@ export function DepositionRow({
       <div className="tracker-mobile-topline">
         <div>
           <div className="tracker-mobile-label">Next step</div>
-          <div className="next-step-summary tracker-mobile-top-summary">
-            <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-            {currentFollowUpDueDate ? (
-              <div className="muted small">Due {format(currentFollowUpDueDate, "MMM d, yyyy")}</div>
-            ) : null}
-          </div>
+          <div className="tracker-mobile-top-summary">{nextStepSummaryContent}</div>
         </div>
         <div>
           <div className="tracker-mobile-label">Last email</div>
           <div className="tracker-mobile-last-email">{lastCommunicationContent}</div>
         </div>
       </div>
-      <div className="next-step-cell tracker-mobile-next-step">{nextStepContent}</div>
+      <div className="next-step-cell tracker-mobile-next-step">{logEmailContent}</div>
     </section>
   );
 
@@ -178,7 +181,6 @@ export function DepositionRow({
             <div className="tracker-mobile-kicker">Reference matter</div>
             <h3>{referenceNumber}</h3>
           </div>
-          <div className={`pill ${followUp.className}`}>{followUp.label}</div>
         </div>
 
         <div className="tracker-mobile-grid">
