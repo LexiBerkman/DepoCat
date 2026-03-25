@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import type { CommunicationType } from "@prisma/client";
+import { Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CounselActions } from "@/components/counsel-actions";
@@ -61,6 +62,7 @@ export function DepositionRow({
   const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
   const [isDeleted, setIsDeleted] = useState(false);
   const [currentLastCommunication, setCurrentLastCommunication] = useState(lastCommunication);
+  const [isEditingCounselEmails, setIsEditingCounselEmails] = useState(false);
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
   const currentLastSentAt = toDate(currentLastCommunication?.sentAt);
@@ -158,10 +160,22 @@ export function DepositionRow({
         draftTemplate={getDraftTemplate(currentLastCommunication?.communicationType)}
         lastSentDateLabel={lastSentDateLabel}
         isScheduled={isScheduled}
+        extraAction={
+          <button
+            className="button-secondary small-button counsel-action-button counsel-email-edit-button"
+            type="button"
+            onClick={() => setIsEditingCounselEmails(true)}
+          >
+            <Pencil size={14} />
+            Edit emails
+          </button>
+        }
       />
       <CounselEmailEditor
         matterId={matterId}
         counselEmails={counselEmails}
+        isEditing={isEditingCounselEmails}
+        onStopEditing={() => setIsEditingCounselEmails(false)}
         onUpdated={onCounselEmailsUpdated}
       />
       <div className="small muted">{counselSummary}</div>
@@ -180,6 +194,7 @@ export function DepositionRow({
           <div className="stack tracker-mobile-card-title">
             <div className="tracker-mobile-kicker">Reference matter</div>
             <h3>{referenceNumber}</h3>
+            <div className="tracker-mobile-header-meta">{clientName}</div>
           </div>
         </div>
 
@@ -187,16 +202,10 @@ export function DepositionRow({
           {topWorkflowContent}
 
           <section className="tracker-mobile-section">
-            <div className="tracker-mobile-summary-grid">
-              <div className="tracker-mobile-summary-card">
-                <div className="tracker-mobile-label">Client</div>
-                <div className="tracker-mobile-value">{clientName}</div>
-              </div>
-              <div className="tracker-mobile-summary-card">
-                <div className="tracker-mobile-label">Deponent</div>
-                <div className="tracker-mobile-value">{deponentName}</div>
-                <div className="muted small">{roleTitle || "No role noted"}</div>
-              </div>
+            <div className="tracker-mobile-summary-card">
+              <div className="tracker-mobile-label">Deponent</div>
+              <div className="tracker-mobile-value">{deponentName}</div>
+              <div className="muted small">{roleTitle || "No role noted"}</div>
             </div>
           </section>
 

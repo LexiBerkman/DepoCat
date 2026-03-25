@@ -506,11 +506,6 @@ th:nth-child(5) {
   min-width: 8.75rem;
 }
 
-.counsel-edit-row {
-  display: flex;
-  justify-content: center;
-}
-
 .counsel-email-edit-button {
   width: min(11rem, 100%);
   justify-content: center;
@@ -617,6 +612,12 @@ th:nth-child(5) {
 .tracker-mobile-card-title h3 {
   margin: 0;
   font-size: 1.2rem;
+}
+
+.tracker-mobile-header-meta {
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 600;
 }
 
 .tracker-mobile-kicker,

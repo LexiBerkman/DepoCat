@@ -1,7 +1,7 @@
 "use client";
 
-import { Pencil, Save } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { Save } from "lucide-react";
+import { useActionState, useEffect } from "react";
 
 import { updateCounselEmailsAction } from "@/lib/actions";
 
@@ -15,12 +15,17 @@ export function CounselEmailEditor({
   matterId,
   counselEmails,
   onUpdated,
+  isEditing = false,
+  onStartEditing,
+  onStopEditing,
 }: {
   matterId: string;
   counselEmails: string[];
   onUpdated?: (emails: string[]) => void;
+  isEditing?: boolean;
+  onStartEditing?: () => void;
+  onStopEditing?: () => void;
 }) {
-  const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateCounselEmailsAction, initialState);
 
   useEffect(() => {
@@ -28,28 +33,17 @@ export function CounselEmailEditor({
       return;
     }
 
-    setIsEditing(false);
+    onStopEditing?.();
     onUpdated?.(
       state.counselEmailsValue
         .split(";")
         .map((value) => value.trim())
         .filter(Boolean),
     );
-  }, [onUpdated, state.counselEmailsValue, state.success]);
+  }, [onStopEditing, onUpdated, state.counselEmailsValue, state.success]);
 
   if (!isEditing) {
-    return (
-      <div className="counsel-edit-row">
-        <button
-          className="button-secondary small-button counsel-email-edit-button"
-          type="button"
-          onClick={() => setIsEditing(true)}
-        >
-          <Pencil size={14} />
-          Edit emails
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -71,7 +65,7 @@ export function CounselEmailEditor({
           <Save size={14} />
           {pending ? "Saving..." : "Save emails"}
         </button>
-        <button className="button-secondary small-button" type="button" onClick={() => setIsEditing(false)}>
+        <button className="button-secondary small-button" type="button" onClick={onStopEditing}>
           Cancel
         </button>
       </div>

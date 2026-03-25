@@ -1,6 +1,7 @@
 "use client";
 
 import { Copy, Mail } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { buildEmailDraft, type EmailTemplateKey } from "@/lib/email-templates";
@@ -43,6 +44,7 @@ export function CounselActions({
   draftTemplate,
   lastSentDateLabel,
   isScheduled,
+  extraAction,
 }: {
   emails: string[];
   deponentName: string;
@@ -51,6 +53,7 @@ export function CounselActions({
   draftTemplate: EmailTemplateKey;
   lastSentDateLabel?: string | null;
   isScheduled?: boolean;
+  extraAction?: ReactNode;
 }) {
   const [copiedItem, setCopiedItem] = useState<"emails" | "draft" | null>(null);
   const [emailSelectPrompt, setEmailSelectPrompt] = useState(false);
@@ -160,6 +163,7 @@ export function CounselActions({
             {copiedItem === "draft" ? "Copied!" : "Draft email"}
           </button>
         )}
+        {extraAction}
       </div>
 
       <input
