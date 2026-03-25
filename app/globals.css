@@ -681,12 +681,13 @@ th:nth-child(5) {
 @media (min-width: 981px) {
   .tracker-records-list {
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    align-items: start;
+    align-items: stretch;
   }
 
   .tracker-mobile-card {
     gap: 0.85rem;
     padding: 0.9rem;
+    height: 100%;
   }
 
   .tracker-mobile-card-title h3 {
