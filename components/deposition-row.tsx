@@ -124,6 +124,27 @@ export function DepositionRow({
     <div className="muted small">No communication logged</div>
   );
 
+  const topWorkflowContent = (
+    <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+      <div className="tracker-mobile-topline">
+        <div>
+          <div className="tracker-mobile-label">Next step</div>
+          <div className="next-step-summary tracker-mobile-top-summary">
+            <div className={`pill ${followUp.className}`}>{followUp.label}</div>
+            {currentFollowUpDueDate ? (
+              <div className="muted small">Due {format(currentFollowUpDueDate, "MMM d, yyyy")}</div>
+            ) : null}
+          </div>
+        </div>
+        <div>
+          <div className="tracker-mobile-label">Last email</div>
+          <div className="tracker-mobile-last-email">{lastCommunicationContent}</div>
+        </div>
+      </div>
+      <div className="next-step-cell tracker-mobile-next-step">{nextStepContent}</div>
+    </section>
+  );
+
   const counselContent = (
     <div className="stack">
       <CounselActions
@@ -161,6 +182,8 @@ export function DepositionRow({
         </div>
 
         <div className="tracker-mobile-grid">
+          {topWorkflowContent}
+
           <section className="tracker-mobile-section">
             <div className="tracker-mobile-summary-grid">
               <div className="tracker-mobile-summary-card">
@@ -183,16 +206,6 @@ export function DepositionRow({
           <section className="tracker-mobile-section tracker-mobile-section-emphasis">
             <div className="tracker-mobile-label">Scheduled</div>
             {scheduledContent}
-          </section>
-
-          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
-            <div className="tracker-mobile-label">Next step</div>
-            <div className="next-step-cell tracker-mobile-next-step">{nextStepContent}</div>
-          </section>
-
-          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
-            <div className="tracker-mobile-label">Last email</div>
-            {lastCommunicationContent}
           </section>
 
           <section className="tracker-mobile-section tracker-mobile-section-emphasis">
