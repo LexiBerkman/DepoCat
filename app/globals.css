@@ -506,8 +506,14 @@ th:nth-child(5) {
   min-width: 8.75rem;
 }
 
+.counsel-edit-row {
+  display: flex;
+  justify-content: center;
+}
+
 .counsel-email-edit-button {
-  align-self: center;
+  width: min(11rem, 100%);
+  justify-content: center;
 }
 
 .deposition-note {
@@ -676,6 +682,70 @@ th:nth-child(5) {
   gap: 0.1rem;
 }
 
+@media (min-width: 981px) {
+  .tracker-records-list {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    align-items: start;
+  }
+
+  .tracker-mobile-card {
+    gap: 0.85rem;
+    padding: 0.9rem;
+  }
+
+  .tracker-mobile-card-title h3 {
+    font-size: 1.1rem;
+  }
+
+  .tracker-mobile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .tracker-mobile-grid > :nth-child(1) {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-mobile-grid > :nth-child(5) {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-mobile-section-emphasis,
+  .tracker-mobile-summary-card {
+    padding: 0.75rem;
+  }
+
+  .tracker-mobile-topline {
+    gap: 0.75rem;
+  }
+
+  .tracker-mobile-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .tracker-mobile-value {
+    font-size: 0.95rem;
+  }
+
+  .deposition-note {
+    margin-top: 0.4rem;
+  }
+
+  .deposition-note-input {
+    min-height: 4.5rem;
+  }
+
+  .counsel-btn-row {
+    gap: 0.4rem;
+  }
+
+  .counsel-action-button {
+    min-width: 7.75rem;
+  }
+}
+
 .security-cat-row {
   display: flex;
   gap: 0.55rem;
@@ -837,7 +907,7 @@ th:nth-child(5) {
   }
 
   .counsel-email-edit-button {
-    align-self: center;
+    width: min(11rem, 100%);
   }
 
   .delete-button {

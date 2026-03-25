@@ -39,14 +39,16 @@ export function CounselEmailEditor({
 
   if (!isEditing) {
     return (
-      <button
-        className="button-secondary small-button counsel-action-button counsel-email-edit-button"
-        type="button"
-        onClick={() => setIsEditing(true)}
-      >
-        <Pencil size={14} />
-        Edit emails
-      </button>
+      <div className="counsel-edit-row">
+        <button
+          className="button-secondary small-button counsel-email-edit-button"
+          type="button"
+          onClick={() => setIsEditing(true)}
+        >
+          <Pencil size={14} />
+          Edit emails
+        </button>
+      </div>
     );
   }
 
