@@ -4,16 +4,16 @@ import JSZip from "jszip";
 import { ZodError, z } from "zod";
 
 const rowSchema = z.object({
-  referenceNumber: z.string().min(1),
-  clientName: z.string().min(1),
-  deponentName: z.string().min(1),
-  deponentRole: z.string().optional(),
+  referenceNumber: z.string().trim().min(1).max(100),
+  clientName: z.string().trim().min(1).max(200),
+  deponentName: z.string().trim().min(1).max(200),
+  deponentRole: z.string().trim().max(200).optional(),
   requestedDate: z.string().optional(),
   scheduledDate: z.string().optional(),
-  counselName: z.string().optional(),
+  counselName: z.string().trim().max(200).optional(),
   counselEmail: z.string().optional(),
-  counselFirm: z.string().optional(),
-  notes: z.string().optional(),
+  counselFirm: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(2000).optional(),
 });
 
 export type ImportRow = z.infer<typeof rowSchema>;

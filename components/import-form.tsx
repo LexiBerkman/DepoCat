@@ -22,7 +22,7 @@ export function ImportForm() {
         Recommended columns: Reference Number, Client Name, Deponent Name, Deponent Role,
         Requested Date, Scheduled Date, Counsel Name, Counsel Email, Counsel Firm, Notes.
         Common variations like `Reference`, `Client`, `Deponent`, `Attorney Name`, and `Attorney Email`
-        are now accepted too. Use `.xlsx` or `.csv`.
+        are now accepted too. Use `.xlsx` or `.csv` and keep the file under 10 MB.
       </p>
       {state.error ? <p className="error">{state.error}</p> : null}
       {state.success ? <p>{state.success}</p> : null}

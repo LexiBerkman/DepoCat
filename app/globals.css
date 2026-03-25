@@ -653,11 +653,6 @@ th:nth-child(5) {
   background: rgba(255, 255, 255, 0.82);
 }
 
-.tracker-mobile-summary-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
 .tracker-mobile-value {
   font-size: 1rem;
   font-weight: 600;
@@ -721,9 +716,10 @@ th:nth-child(5) {
     gap: 0.75rem;
   }
 
-  .tracker-mobile-summary-grid {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
+  .counsel-btn-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
   }
 
   .tracker-mobile-value {
@@ -738,12 +734,9 @@ th:nth-child(5) {
     min-height: 4.5rem;
   }
 
-  .counsel-btn-row {
-    gap: 0.4rem;
-  }
-
   .counsel-action-button {
-    min-width: 7.75rem;
+    min-width: 0;
+    width: 100%;
   }
 }
 

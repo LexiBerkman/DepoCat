@@ -22,9 +22,9 @@ const loginSchema = z.object({
 });
 
 const matterSchema = z.object({
-  referenceNumber: z.string().min(1),
-  clientName: z.string().min(1),
-  notes: z.string().optional(),
+  referenceNumber: z.string().trim().min(1).max(100),
+  clientName: z.string().trim().min(1).max(200),
+  notes: z.string().trim().max(2000).optional(),
 });
 
 const changePasswordSchema = z
@@ -58,13 +58,25 @@ const deleteDeponentSchema = z.object({
 
 const updateCounselEmailsSchema = z.object({
   matterId: z.string().min(1),
-  counselEmails: z.string().min(1),
+  counselEmails: z.string().trim().min(1).max(4000),
 });
 
 const updateDepositionNoteSchema = z.object({
   depositionTargetId: z.string().min(1),
   notes: z.string().max(200),
 });
+
+const MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_IMPORT_EXTENSIONS = new Set([".xlsx", ".csv"]);
+const ALLOWED_IMPORT_MIME_TYPES = new Set([
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "application/csv",
+  "text/plain",
+]);
+const MAX_DEPONENT_NAME_LENGTH = 200;
+const MAX_ROLE_TITLE_LENGTH = 200;
+const MAX_COUNSEL_NAME_LENGTH = 200;
 
 function parseCounselEmailInput(value: string) {
   return value
@@ -482,6 +494,16 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
     }))
     .filter((entry) => entry.fullName || entry.email);
 
+  const invalidDeponentName = deponentNames.find((name) => name.length > MAX_DEPONENT_NAME_LENGTH);
+  if (invalidDeponentName) {
+    return { error: "Deponent names must be 200 characters or fewer." };
+  }
+
+  const invalidRoleTitle = deponentRoles.find((role) => role.length > MAX_ROLE_TITLE_LENGTH);
+  if (invalidRoleTitle) {
+    return { error: "Deponent roles must be 200 characters or fewer." };
+  }
+
   if (counselEntries.length === 0) {
     return { error: "Add at least one opposing counsel name and email before saving the matter." };
   }
@@ -489,6 +511,10 @@ export async function createMatterAction(_: { error: string }, formData: FormDat
   for (const entry of counselEntries) {
     if (!entry.fullName || !entry.email) {
       return { error: "Each opposing counsel entry needs both a name and an email address." };
+    }
+
+    if (entry.fullName.length > MAX_COUNSEL_NAME_LENGTH) {
+      return { error: "Counsel names must be 200 characters or fewer." };
     }
 
     const emailCheck = z.string().email().safeParse(entry.email);
@@ -859,6 +885,32 @@ export async function importWorkbookAction(
 
   if (!(file instanceof File)) {
     return { error: "Choose an Excel file before importing.", success: "" };
+  }
+
+  const normalizedName = file.name.toLowerCase();
+  const hasAllowedExtension = [...ALLOWED_IMPORT_EXTENSIONS].some((extension) =>
+    normalizedName.endsWith(extension),
+  );
+
+  if (!hasAllowedExtension) {
+    return {
+      error: "Upload a .xlsx or .csv file.",
+      success: "",
+    };
+  }
+
+  if (file.size <= 0 || file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
+    return {
+      error: "Import files must be between 1 byte and 10 MB.",
+      success: "",
+    };
+  }
+
+  if (file.type && !ALLOWED_IMPORT_MIME_TYPES.has(file.type)) {
+    return {
+      error: "Upload a supported Excel or CSV file.",
+      success: "",
+    };
   }
 
   try {
