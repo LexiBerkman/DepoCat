@@ -32,6 +32,8 @@ export function DepositionRow({
   lastCommunication,
   counselEmails,
   counselSummary,
+  onCounselEmailsUpdated,
+  variant = "table",
 }: {
   referenceNumber: string;
   clientName: string;
@@ -51,12 +53,13 @@ export function DepositionRow({
     | undefined;
   counselEmails: string[];
   counselSummary: string;
+  onCounselEmailsUpdated?: (emails: string[]) => void;
+  variant?: "table" | "card";
 }) {
   const [currentScheduledDate, setCurrentScheduledDate] = useState(toDate(scheduledDate));
   const [currentFollowUpStage, setCurrentFollowUpStage] = useState(followUpStage);
   const [currentFollowUpDueDate, setCurrentFollowUpDueDate] = useState(toDate(followUpDueDate));
   const [isDeleted, setIsDeleted] = useState(false);
-  const [currentCounselEmails, setCurrentCounselEmails] = useState(counselEmails);
   const [currentLastCommunication, setCurrentLastCommunication] = useState(lastCommunication);
 
   const followUp = useMemo(() => getFollowUpLabel(currentFollowUpStage), [currentFollowUpStage]);
@@ -71,6 +74,136 @@ export function DepositionRow({
     return null;
   }
 
+  const scheduledContent = (
+    <ScheduledDateForm
+      depositionTargetId={depositionTargetId}
+      scheduledDate={currentScheduledDate}
+      onUpdated={({ scheduledDateValue, followUpStage: nextStage, followUpDueDateValue }) => {
+        setCurrentScheduledDate(toDate(scheduledDateValue));
+        setCurrentFollowUpStage(nextStage);
+        setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
+      }}
+    />
+  );
+
+  const nextStepContent = (
+    <>
+      <div className="next-step-summary">
+        <div className={`pill ${followUp.className}`}>{followUp.label}</div>
+        {currentFollowUpDueDate ? (
+          <div className="muted small">Due {format(currentFollowUpDueDate, "MMM d, yyyy")}</div>
+        ) : null}
+      </div>
+      <LogEmailForm
+        depositionTargetId={depositionTargetId}
+        defaultType={getDefaultCommunicationType(currentFollowUpStage)}
+        onLogged={({ communicationType, sentAt, followUpStage: nextStage, followUpDueDateValue }) => {
+          setCurrentLastCommunication({
+            communicationType,
+            sentAt,
+          });
+          setCurrentFollowUpStage(nextStage);
+          setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
+        }}
+      />
+    </>
+  );
+
+  const lastCommunicationContent = currentLastCommunication ? (
+    <>
+      <div className="small">{format(currentLastSentAt!, "MMM d, yyyy h:mm a")}</div>
+      <div className="muted small">
+        {currentLastCommunication.communicationType === "FIRST_REQUEST"
+          ? "1st email"
+          : currentLastCommunication.communicationType === "SECOND_REQUEST"
+            ? "2nd email"
+            : "Final email"}
+      </div>
+    </>
+  ) : (
+    <div className="muted small">No communication logged</div>
+  );
+
+  const counselContent = (
+    <div className="stack">
+      <CounselActions
+        emails={counselEmails}
+        deponentName={deponentName}
+        clientName={clientName}
+        referenceNumber={referenceNumber}
+        draftTemplate={getDraftTemplate(currentLastCommunication?.communicationType)}
+        lastSentDateLabel={lastSentDateLabel}
+        isScheduled={isScheduled}
+      />
+      <CounselEmailEditor
+        matterId={matterId}
+        counselEmails={counselEmails}
+        onUpdated={onCounselEmailsUpdated}
+      />
+      <div className="small muted">{counselSummary}</div>
+      <DeleteDeponentButton
+        depositionTargetId={depositionTargetId}
+        deponentName={deponentName}
+        onDeleted={() => setIsDeleted(true)}
+      />
+    </div>
+  );
+
+  if (variant === "card") {
+    return (
+      <article className="tracker-mobile-card">
+        <div className="tracker-mobile-card-header">
+          <div className="stack tracker-mobile-card-title">
+            <div className="tracker-mobile-kicker">Reference matter</div>
+            <h3>{referenceNumber}</h3>
+          </div>
+          <div className={`pill ${followUp.className}`}>{followUp.label}</div>
+        </div>
+
+        <div className="tracker-mobile-grid">
+          <section className="tracker-mobile-section">
+            <div className="tracker-mobile-summary-grid">
+              <div className="tracker-mobile-summary-card">
+                <div className="tracker-mobile-label">Client</div>
+                <div className="tracker-mobile-value">{clientName}</div>
+              </div>
+              <div className="tracker-mobile-summary-card">
+                <div className="tracker-mobile-label">Deponent</div>
+                <div className="tracker-mobile-value">{deponentName}</div>
+                <div className="muted small">{roleTitle || "No role noted"}</div>
+              </div>
+            </div>
+          </section>
+
+          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+            <div className="tracker-mobile-label">Notes</div>
+            <DepositionNoteField depositionTargetId={depositionTargetId} initialNotes={notes} />
+          </section>
+
+          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+            <div className="tracker-mobile-label">Scheduled</div>
+            {scheduledContent}
+          </section>
+
+          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+            <div className="tracker-mobile-label">Next step</div>
+            <div className="next-step-cell tracker-mobile-next-step">{nextStepContent}</div>
+          </section>
+
+          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+            <div className="tracker-mobile-label">Last email</div>
+            {lastCommunicationContent}
+          </section>
+
+          <section className="tracker-mobile-section tracker-mobile-section-emphasis">
+            <div className="tracker-mobile-label">Opposing counsel</div>
+            {counselContent}
+          </section>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <tr>
       <td>
@@ -82,74 +215,10 @@ export function DepositionRow({
         <div className="muted small">{roleTitle || "No role noted"}</div>
         <DepositionNoteField depositionTargetId={depositionTargetId} initialNotes={notes} />
       </td>
-      <td>
-        <ScheduledDateForm
-          depositionTargetId={depositionTargetId}
-          scheduledDate={currentScheduledDate}
-          onUpdated={({ scheduledDateValue, followUpStage: nextStage, followUpDueDateValue }) => {
-            setCurrentScheduledDate(toDate(scheduledDateValue));
-            setCurrentFollowUpStage(nextStage);
-            setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
-          }}
-        />
-      </td>
-      <td className="next-step-cell">
-        <div className="next-step-summary">
-          <div className={`pill ${followUp.className}`}>{followUp.label}</div>
-        </div>
-        <LogEmailForm
-          depositionTargetId={depositionTargetId}
-          defaultType={getDefaultCommunicationType(currentFollowUpStage)}
-          onLogged={({ communicationType, sentAt, followUpStage: nextStage, followUpDueDateValue }) => {
-            setCurrentLastCommunication({
-              communicationType,
-              sentAt,
-            });
-            setCurrentFollowUpStage(nextStage);
-            setCurrentFollowUpDueDate(followUpDueDateValue ? new Date(followUpDueDateValue) : null);
-          }}
-        />
-      </td>
-      <td>
-        {currentLastCommunication ? (
-          <>
-            <div className="small">{format(currentLastSentAt!, "MMM d, yyyy h:mm a")}</div>
-            <div className="muted small">
-              {currentLastCommunication.communicationType === "FIRST_REQUEST"
-                ? "1st email"
-                : currentLastCommunication.communicationType === "SECOND_REQUEST"
-                  ? "2nd email"
-                  : "Final email"}
-            </div>
-          </>
-        ) : (
-          <div className="muted small">No communication logged</div>
-        )}
-      </td>
-      <td>
-        <div className="stack">
-          <CounselActions
-            emails={currentCounselEmails}
-            deponentName={deponentName}
-            clientName={clientName}
-            referenceNumber={referenceNumber}
-            draftTemplate={getDraftTemplate(currentLastCommunication?.communicationType)}
-            lastSentDateLabel={lastSentDateLabel}
-            isScheduled={isScheduled}
-          />
-          <CounselEmailEditor
-            matterId={matterId}
-            counselEmails={currentCounselEmails}
-            onUpdated={setCurrentCounselEmails}
-          />
-          <div className="small muted">{counselSummary}</div>
-          <DeleteDeponentButton
-            depositionTargetId={depositionTargetId}
-            deponentName={deponentName}
-            onDeleted={() => setIsDeleted(true)}
-          />
-        </div>
-      </td>
+      <td>{scheduledContent}</td>
+      <td className="next-step-cell">{nextStepContent}</td>
+      <td>{lastCommunicationContent}</td>
+      <td>{counselContent}</td>
     </tr>
   );
 }

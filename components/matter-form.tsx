@@ -35,13 +35,13 @@ export function MatterForm() {
         </label>
       </div>
       <div className="stack">
-        <div className="row">
-          <div>
+        <div className="row intake-section-header">
+          <div className="intake-section-copy">
             <h3 className="section-title intake-subtitle">Opposing counsel</h3>
             <p className="muted small">Add every defense attorney contact for this matter.</p>
           </div>
           <button
-            className="button-secondary small-button"
+            className="button-secondary small-button intake-section-action"
             type="button"
             onClick={() => setCounselEntries((current) => [...current, createCounselField()])}
           >
@@ -52,11 +52,11 @@ export function MatterForm() {
         <div className="stack">
           {counselEntries.map((counsel, index) => (
             <div key={counsel.id} className="deponent-card">
-              <div className="row">
-                <strong>Opposing counsel {index + 1}</strong>
+              <div className="row deponent-card-header">
+                <strong className="deponent-card-title">Opposing counsel {index + 1}</strong>
                 {counselEntries.length > 1 ? (
                   <button
-                    className="button-secondary small-button"
+                    className="button-secondary small-button deponent-card-remove"
                     type="button"
                     onClick={() =>
                       setCounselEntries((current) => current.filter((entry) => entry.id !== counsel.id))
@@ -88,13 +88,13 @@ export function MatterForm() {
         </div>
       </div>
       <div className="stack">
-        <div className="row">
-          <div>
+        <div className="row intake-section-header">
+          <div className="intake-section-copy">
             <h3 className="section-title intake-subtitle">Deponents</h3>
             <p className="muted small">Add each person you want to depose for this matter.</p>
           </div>
           <button
-            className="button-secondary small-button"
+            className="button-secondary small-button intake-section-action"
             type="button"
             onClick={() => setDeponents((current) => [...current, createDeponentField()])}
           >
@@ -105,11 +105,11 @@ export function MatterForm() {
         <div className="stack">
           {deponents.map((deponent, index) => (
             <div key={deponent.id} className="deponent-card">
-              <div className="row">
-                <strong>Deponent {index + 1}</strong>
+              <div className="row deponent-card-header">
+                <strong className="deponent-card-title">Deponent {index + 1}</strong>
                 {deponents.length > 1 ? (
                   <button
-                    className="button-secondary small-button"
+                    className="button-secondary small-button deponent-card-remove"
                     type="button"
                     onClick={() =>
                       setDeponents((current) => current.filter((entry) => entry.id !== deponent.id))

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Cat, PawPrint } from "lucide-react";
 import type { CommunicationType } from "@prisma/client";
 
@@ -35,6 +35,19 @@ type SearchField = "reference" | "client" | "deponent";
 export function DepositionTracker({ matters }: { matters: TrackerMatter[] }) {
   const [searchField, setSearchField] = useState<SearchField>("reference");
   const [searchQuery, setSearchQuery] = useState("");
+  const [matterCounselEmails, setMatterCounselEmails] = useState<Record<string, string[]>>(() =>
+    Object.fromEntries(
+      matters.map((matter) => [matter.id, matter.opposingCounsel.map((counsel) => counsel.email)]),
+    ),
+  );
+
+  useEffect(() => {
+    setMatterCounselEmails(
+      Object.fromEntries(
+        matters.map((matter) => [matter.id, matter.opposingCounsel.map((counsel) => counsel.email)]),
+      ),
+    );
+  }, [matters]);
 
   const rows = useMemo(
     () =>
@@ -113,70 +126,49 @@ export function DepositionTracker({ matters }: { matters: TrackerMatter[] }) {
           {filteredRows.length} {filteredRows.length === 1 ? "match" : "matches"}
         </div>
       </div>
-      <div className="table-scroll">
-        <table className="tracker-table">
-          <colgroup>
-            <col className="col-reference" />
-            <col className="col-client" />
-            <col className="col-deponent" />
-            <col className="col-scheduled" />
-            <col className="col-next" />
-            <col className="col-last-email" />
-            <col className="col-counsel" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Reference</th>
-              <th>Client</th>
-              <th>Deponent</th>
-              <th>Scheduled</th>
-              <th>Next step</th>
-              <th>Last email</th>
-              <th>Opposing counsel</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.length > 0 ? (
-              filteredRows.map(({ matter, deposition, lastCommunication }) => (
-                <DepositionRow
-                  key={deposition.id}
-                  referenceNumber={matter.referenceNumber}
-                  clientName={matter.clientName}
-                  matterId={matter.id}
-                  depositionTargetId={deposition.id}
-                  deponentName={deposition.fullName}
-                  roleTitle={deposition.roleTitle}
-                  notes={deposition.notes}
-                  scheduledDate={deposition.scheduledDate}
-                  followUpStage={deposition.followUpStage}
-                  followUpDueDate={deposition.followUpDueDate}
-                  lastCommunication={
-                    lastCommunication
-                      ? {
-                          sentAt: lastCommunication.sentAt,
-                          communicationType: lastCommunication.communicationType,
-                        }
-                      : undefined
-                  }
-                  counselEmails={matter.opposingCounsel.map((counsel) => counsel.email)}
-                  counselSummary={matter.opposingCounsel
-                    .map((counsel) =>
-                      `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`,
-                    )
-                    .join(" | ")}
-                />
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7}>
-                  <div className="tracker-empty-state">
-                    No tracker rows matched that {searchField}. Try a different search.
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="tracker-records-list">
+        {filteredRows.length > 0 ? (
+          filteredRows.map(({ matter, deposition, lastCommunication }) => (
+            <DepositionRow
+              key={deposition.id}
+              variant="card"
+              referenceNumber={matter.referenceNumber}
+              clientName={matter.clientName}
+              matterId={matter.id}
+              depositionTargetId={deposition.id}
+              deponentName={deposition.fullName}
+              roleTitle={deposition.roleTitle}
+              notes={deposition.notes}
+              scheduledDate={deposition.scheduledDate}
+              followUpStage={deposition.followUpStage}
+              followUpDueDate={deposition.followUpDueDate}
+              lastCommunication={
+                lastCommunication
+                  ? {
+                      sentAt: lastCommunication.sentAt,
+                      communicationType: lastCommunication.communicationType,
+                    }
+                  : undefined
+              }
+              counselEmails={matterCounselEmails[matter.id] ?? []}
+              counselSummary={matter.opposingCounsel
+                .map((counsel) =>
+                  `${counsel.fullName}${counsel.firmName ? `, ${counsel.firmName}` : ""}`,
+                )
+                .join(" | ")}
+              onCounselEmailsUpdated={(emails) => {
+                setMatterCounselEmails((current) => ({
+                  ...current,
+                  [matter.id]: emails,
+                }));
+              }}
+            />
+          ))
+        ) : (
+          <div className="tracker-empty-state">
+            No tracker rows matched that {searchField}. Try a different search.
+          </div>
+        )}
       </div>
     </section>
   );
